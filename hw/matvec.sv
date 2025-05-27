@@ -21,16 +21,18 @@ parameter N /* verilator public */ = 16, M /* verilator public */ = 8;
 localparam INTWIDTH = IWIDTH + WWIDTH;
 localparam OWIDTH = INTWIDTH + $clog2(N);
 
-wire [INTWIDTH - 1 : 0] mult_intermediates[N - 1 : 0][M - 1 : 0];
+wire [INTWIDTH - 1 : 0] mult_intermediates[M - 1 : 0][N - 1 : 0];
 
 generate
 for (i = 0; i < N; i++) begin : mult_rows
     for (j = 0; j < M; j++) begin : mult_cols
-        weight_mult wm(in[i], weights[i][j], mult_intermediates[i][j]);
+        weight_mult wm(in[i], weights[i][j], mult_intermediates[j][i]);
     end
 end
 endgenerate
 
-accumulator #(N, M, INTWIDTH) acc(clk, acc_rst, mult_intermediates, out);
+for (i = 0; i < M; i++) begin : accumulators
+    accumulator #(N, INTWIDTH) acc(clk, acc_rst, mult_intermediates[i], out[i]);
+end
 
 endmodule
