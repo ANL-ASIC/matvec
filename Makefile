@@ -4,8 +4,11 @@ verilator_out := obj_dir
 
 top_mod := matvec
 top_src := hw/$(top_mod).sv
+top_tb_src := tb/sim_main.cpp
 
-sim_src := tb/sim_main.cpp
+fpu_mod := FPmul
+fpu_src := hw/$(fpu_mod).sv
+fpu_tb_src := tb/fpu.cpp
 
 # If $VERILATOR_ROOT isn't in the environment, we assume it is part of a
 # package install, and verilator is in your path. Otherwise find the
@@ -45,7 +48,7 @@ VERILATOR_FLAGS += -Ihw
 # VERILATOR_FLAGS += --decorations node -CFLAGS -ggdb -LDFLAGS -ggdb -CFLAGS -D_GLIBCXX_DEBUG -CFLAGS -DVL_DEBUG=1
 
 # Input files for Verilator
-VERILATOR_INPUT = $(top_src) $(sim_src)
+# VERILATOR_INPUT = $(top_src) $(top_tb_src)
 
 ######################################################################
 
@@ -60,13 +63,25 @@ VERILATOR_COV_FLAGS += logs/coverage.dat
 
 ######################################################################
 
-default: build
+default: top fpu
 
-build:
+top:
 	@echo
 	@echo "-- VERILATE ----------------"
 	$(VERILATOR) --version
-	$(VERILATOR) $(VERILATOR_FLAGS) $(VERILATOR_INPUT)
+	$(VERILATOR) $(VERILATOR_FLAGS) $(top_src) $(top_tb_src)
+
+	# @echo
+	# @echo "-- RUN ---------------------"
+	# @rm -rf logs
+	# @mkdir -p logs
+	# obj_dir/V$(top_mod)
+
+fpu:
+	@echo
+	@echo "-- VERILATE ----------------"
+	$(VERILATOR) --version
+	$(VERILATOR) $(VERILATOR_FLAGS) $(fpu_src) $(fpu_tb_src)
 
 	# @echo
 	# @echo "-- RUN ---------------------"
