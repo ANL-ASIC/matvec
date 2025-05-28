@@ -6,9 +6,13 @@ top_mod := matvec
 top_src := hw/$(top_mod).sv
 top_tb_src := tb/sim_main.cpp
 
-fpu_mod := FPmul
-fpu_src := hw/$(fpu_mod).sv
-fpu_tb_src := tb/fpu.cpp
+fmul_mod := FPmul
+fmul_src := hw/$(fmul_mod).sv
+fmul_tb_src := tb/fmult.cpp
+
+fadd_mod := FPadd
+fadd_src := hw/$(fadd_mod).sv
+fadd_tb_src := tb/fadd.cpp
 
 # If $VERILATOR_ROOT isn't in the environment, we assume it is part of a
 # package install, and verilator is in your path. Otherwise find the
@@ -63,7 +67,7 @@ VERILATOR_COV_FLAGS += logs/coverage.dat
 
 ######################################################################
 
-default: top fpu
+default: top fmul fadd
 
 top:
 	@echo
@@ -77,11 +81,23 @@ top:
 	# @mkdir -p logs
 	# obj_dir/V$(top_mod)
 
-fpu:
+fmul:
 	@echo
 	@echo "-- VERILATE ----------------"
 	$(VERILATOR) --version
-	$(VERILATOR) $(VERILATOR_FLAGS) $(fpu_src) $(fpu_tb_src)
+	$(VERILATOR) $(VERILATOR_FLAGS) $(fmul_src) $(fmul_tb_src)
+
+	# @echo
+	# @echo "-- RUN ---------------------"
+	# @rm -rf logs
+	# @mkdir -p logs
+	# obj_dir/V$(top_mod)
+
+fadd:
+	@echo
+	@echo "-- VERILATE ----------------"
+	$(VERILATOR) --version
+	$(VERILATOR) $(VERILATOR_FLAGS) $(fadd_src) $(fadd_tb_src)
 
 	# @echo
 	# @echo "-- RUN ---------------------"

@@ -220,7 +220,7 @@ wire [2 * (SIG_WIDTH + 1) - 1:0] dtemp;
     .isZ(B_isZ));
     // .isDN(/* open */));
 
-  FPnormalize #(
+  FPnormalizeMul #(
       .SIG_WIDTH(SIG_WIDTH),
       .EWIDTH(EWIDTH))
       norm(
