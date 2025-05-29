@@ -52,7 +52,9 @@ int leading_bit_pos;
 int i;
 
   assign shift_dir = leading_bit_pos > (SIG_WIDTH + 3);
-  assign shift_factor = shift_dir == 1'b1 ? (SHIFT_BITS)'(leading_bit_pos - (SIG_WIDTH + 3)) : (SHIFT_BITS)'((SIG_WIDTH + 3) - leading_bit_pos);
+  assign shift_factor = (SIG_in == 0 && EXP_in == 0) ? 0 :
+      (shift_dir == 1'b1 ? (SHIFT_BITS)'(leading_bit_pos - (SIG_WIDTH + 3)) :
+      (SHIFT_BITS)'((SIG_WIDTH + 3) - leading_bit_pos));
 
   always @(*) begin
       leading_bit_pos = 0;

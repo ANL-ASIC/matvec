@@ -19,14 +19,13 @@ logic Y_sign;
 logic sum_sign;
 logic [EWIDTH - 1:0] X_exp;
 logic [EWIDTH - 1:0] Y_exp;
-logic [EWIDTH - 1:0] sum_exp, sum_exp_temp, norm_exp, round_exp;
+logic [EWIDTH - 1:0] sum_exp, norm_exp, round_exp;
 logic [SIG_WIDTH + 3:0] X_sig, Y_sig;
 logic [SIG_WIDTH + 3:0] X_aligned_sig, Y_aligned_sig;
 logic [SIG_WIDTH + 4:0] sum_significand;
 
 logic [EWIDTH:0] expdiff, abs_diff;
 logic [SIG_WIDTH + 4:0] sum_significand_temp;
-logic [SIG_WIDTH + 4:0] sum_significand_temp2;
 logic [SIG_WIDTH + 3:0] norm_significand;
 // verilator lint_off UNUSEDSIGNAL
 logic [SIG_WIDTH:0] round_significand;
@@ -48,22 +47,12 @@ logic [SIG_WIDTH:0] round_significand;
         X_aligned_sig = expdiff[EWIDTH] ? X_sig >> abs_diff : X_sig;	//X sig shifts if expdiff[EWIDTH]
         Y_aligned_sig = expdiff[EWIDTH] ? Y_sig : Y_sig >> abs_diff;   //Y sig shifts if !expdiff[EWIDTH]
 
-        sum_exp_temp = expdiff[EWIDTH] ? Y_exp : X_exp;			//Greater exp taken
+        sum_exp = expdiff[EWIDTH] ? Y_exp : X_exp;			//Greater exp taken
 
         sum_sign = X_sign & Y_sign;
         if (!(X_sign ^ Y_sign)) begin
             sum_significand_temp = X_aligned_sig + Y_aligned_sig;
-            sum_significand_temp2 = sum_significand_temp;
-            if (sum_significand_temp[SIG_WIDTH + 3] == 1'b1) begin
-                sum_significand = sum_significand_temp;
-                sum_exp = sum_exp_temp;
-            end else if (sum_significand_temp[SIG_WIDTH + 4] == 1'b1) begin
-                sum_significand = sum_significand_temp >> 1;
-                sum_exp = sum_exp_temp + 1;
-            end else begin
-                sum_significand = sum_significand_temp << 1;
-                sum_exp = sum_exp_temp - 1;
-            end
+            sum_significand = sum_significand_temp;
         end else begin
             if (X_sign)
                 sum_significand_temp = Y_aligned_sig - X_aligned_sig;
@@ -71,18 +60,10 @@ logic [SIG_WIDTH:0] round_significand;
                 sum_significand_temp = X_aligned_sig - Y_aligned_sig;
 
             if (sum_significand_temp[SIG_WIDTH + 4] == 1'b1) begin
-                sum_significand_temp2 = ~sum_significand_temp + 1;
+                sum_significand = ~sum_significand_temp + 1;
                 sum_sign = 1'b1;
             end else begin
-                sum_significand_temp2 = sum_significand_temp;
-            end
-
-            if (sum_significand_temp2[SIG_WIDTH + 3] == 1'b1) begin
-                sum_significand = sum_significand_temp2;
-                sum_exp = sum_exp_temp;
-            end else begin
-                sum_significand = sum_significand_temp2 << 1;
-                sum_exp = sum_exp_temp - 1;
+                sum_significand = sum_significand_temp;
             end
         end
     end

@@ -16,10 +16,13 @@ end
 
 genvar i, j;
 
-parameter IWIDTH = 12, WWIDTH = 4;
+// parameter IWIDTH = 12, WWIDTH = 4;
+parameter IWIDTH = 12, WWIDTH = 32;
 parameter N /* verilator public */ = 16, M /* verilator public */ = 8;
-localparam INTWIDTH = IWIDTH + WWIDTH;
-localparam OWIDTH = INTWIDTH + $clog2(N);
+// localparam INTWIDTH = IWIDTH + WWIDTH;
+localparam INTWIDTH = WWIDTH;
+// localparam OWIDTH = INTWIDTH + $clog2(N);
+localparam OWIDTH = WWIDTH;
 
 wire [INTWIDTH - 1 : 0] mult_intermediates[M - 1 : 0][N - 1 : 0];
 
