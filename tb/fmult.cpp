@@ -5,7 +5,7 @@
 #include <random>
 #include <array>
 #include <algorithm>
-#include "VFPmul.h"
+#include "Vint_fp_mult.h"
 #include <verilated.h>
 #include <verilated_vcd_c.h>
 
@@ -13,18 +13,17 @@ static std::mt19937 gen;
 static std::uniform_int_distribution<unsigned int> dist(0, 10);
 static std::uniform_real_distribution<float> wdist(-1, 1);
 
-static void progress_one_cycle(VerilatedContext& context, VFPmul& testMod, unsigned int& input, float& weight) {
+static void progress_one_cycle(VerilatedContext& context, Vint_fp_mult& testMod, unsigned int& input, float& weight) {
     testMod.eval();
     context.timeInc(1);
     // testMod.clk = 0;
 
     unsigned int val = dist(gen);
-    float fval = static_cast<float>(val);
-    testMod.FP_A = *reinterpret_cast<unsigned int *>(&fval);
+    testMod.a = val;
     input = val;
 
-    fval = wdist(gen);
-    testMod.FP_B = *reinterpret_cast<unsigned int *>(&fval);
+    float fval = wdist(gen);
+    testMod.b = *reinterpret_cast<unsigned int *>(&fval);
     weight = fval;
 
     testMod.eval();
@@ -33,11 +32,11 @@ static void progress_one_cycle(VerilatedContext& context, VFPmul& testMod, unsig
     testMod.eval();
 }
 
-static bool validate(VFPmul& testMod, unsigned int input, float weight) {
+static bool validate(Vint_fp_mult& testMod, unsigned int input, float weight) {
     float output = static_cast<float>(input) * weight;
 
-    if (output != *reinterpret_cast<float *>(&testMod.FP_Z)) {
-        std::cout << "Detected mismatch for " << input << " * " << weight << ": expected '" << output << "' (" << std::hex << *reinterpret_cast<unsigned int *>(&output) << std::dec << "), but got '" << *reinterpret_cast<float *>(&testMod.FP_Z) << "' (" << std::hex << testMod.FP_Z << std::dec << ")" << std::endl;
+    if (output != *reinterpret_cast<float *>(&testMod.c)) {
+        std::cout << "Detected mismatch for " << input << " * " << weight << ": expected '" << output << "' (" << std::hex << *reinterpret_cast<unsigned int *>(&output) << std::dec << "), but got '" << *reinterpret_cast<float *>(&testMod.c) << "' (" << std::hex << testMod.c << std::dec << ")" << std::endl;
         return false;
     } else {
         std::cout << input << " * " << weight << " = " << output << std::endl;
@@ -54,7 +53,7 @@ int main(int argc, char **argv) {
     context.traceEverOn(true);
     context.commandArgs(argc, argv);
 
-    VFPmul testMod(&context, "MATVEC");
+    Vint_fp_mult testMod(&context, "MATVEC");
 
     std::random_device rd;
     gen = std::mt19937(rd());
@@ -72,12 +71,11 @@ int main(int argc, char **argv) {
     // testMod.clk = 0;
 
     unsigned int val = dist(gen);
-    float fval = static_cast<float>(val);
-    testMod.FP_A = *reinterpret_cast<unsigned int *>(&fval);
+    testMod.a = val;
     input = val;
 
-    fval = wdist(gen);
-    testMod.FP_B = *reinterpret_cast<unsigned int *>(&fval);
+    float fval = wdist(gen);
+    testMod.b = *reinterpret_cast<unsigned int *>(&fval);
     weight = fval;
 
     // testMod.start = 1;

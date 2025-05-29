@@ -6,13 +6,17 @@ top_mod := matvec
 top_src := hw/$(top_mod).sv
 top_tb_src := tb/sim_main.cpp
 
-fmul_mod := FPmul
+fmul_mod := int_fp_mult
 fmul_src := hw/$(fmul_mod).sv
 fmul_tb_src := tb/fmult.cpp
 
 fadd_mod := FPadd
 fadd_src := hw/$(fadd_mod).sv
 fadd_tb_src := tb/fadd.cpp
+
+fconv_mod := int_to_float
+fconv_src := hw/$(fconv_mod).sv
+fconv_tb_src := tb/fconv.cpp
 
 # If $VERILATOR_ROOT isn't in the environment, we assume it is part of a
 # package install, and verilator is in your path. Otherwise find the
@@ -67,7 +71,7 @@ VERILATOR_COV_FLAGS += logs/coverage.dat
 
 ######################################################################
 
-default: top fmul fadd
+default: top fmul fadd fconv
 
 top:
 	@echo
@@ -98,6 +102,18 @@ fadd:
 	@echo "-- VERILATE ----------------"
 	$(VERILATOR) --version
 	$(VERILATOR) $(VERILATOR_FLAGS) $(fadd_src) $(fadd_tb_src)
+
+	# @echo
+	# @echo "-- RUN ---------------------"
+	# @rm -rf logs
+	# @mkdir -p logs
+	# obj_dir/V$(top_mod)
+
+fconv:
+	@echo
+	@echo "-- VERILATE ----------------"
+	$(VERILATOR) --version
+	$(VERILATOR) $(VERILATOR_FLAGS) $(fconv_src) $(fconv_tb_src)
 
 	# @echo
 	# @echo "-- RUN ---------------------"
