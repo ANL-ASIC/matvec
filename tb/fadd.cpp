@@ -35,7 +35,11 @@ static bool validate(VFPadd& testMod, float input, float weight) {
     float output = input + weight;
 
     if (output != *reinterpret_cast<float *>(&testMod.sum)) {
-        std::cout << "Detected mismatch for " << input << " + " << weight << ": expected '" << output << "' (" << std::hex << *reinterpret_cast<unsigned int *>(&output) << std::dec << "), but got '" << *reinterpret_cast<float *>(&testMod.sum) << "' (" << std::hex << testMod.sum << std::dec << ")" << std::endl;
+        std::cout << "Detected mismatch for " << input << " + " << weight
+            << ": expected '" << output << "' (" << std::hex
+            << *reinterpret_cast<unsigned int *>(&output) << std::dec
+            << "), but got '" << *reinterpret_cast<float *>(&testMod.sum)
+            << "' (" << std::hex << testMod.sum << std::dec << ")" << std::endl;
         return false;
     } else {
         std::cout << input << " + " << weight << " = " << output << std::endl;
@@ -52,7 +56,7 @@ int main(int argc, char **argv) {
     context.traceEverOn(true);
     context.commandArgs(argc, argv);
 
-    VFPadd testMod(&context, "MATVEC");
+    VFPadd testMod(&context, "FADD");
 
     std::random_device rd;
     gen = std::mt19937(rd());

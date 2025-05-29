@@ -36,7 +36,12 @@ static bool validate(Vint_fp_mult& testMod, unsigned int input, float weight) {
     float output = static_cast<float>(input) * weight;
 
     if (output != *reinterpret_cast<float *>(&testMod.c)) {
-        std::cout << "Detected mismatch for " << input << " * " << weight << ": expected '" << output << "' (" << std::hex << *reinterpret_cast<unsigned int *>(&output) << std::dec << "), but got '" << *reinterpret_cast<float *>(&testMod.c) << "' (" << std::hex << testMod.c << std::dec << ")" << std::endl;
+        std::cout << "Detected mismatch for " << input << " * " << weight
+            << ": expected '" << output << "' (" << std::hex
+            << *reinterpret_cast<unsigned int *>(&output)
+            << std::dec << "), but got '"
+            << *reinterpret_cast<float *>(&testMod.c) << "' (" << std::hex
+            << testMod.c << std::dec << ")" << std::endl;
         return false;
     } else {
         std::cout << input << " * " << weight << " = " << output << std::endl;
@@ -53,7 +58,7 @@ int main(int argc, char **argv) {
     context.traceEverOn(true);
     context.commandArgs(argc, argv);
 
-    Vint_fp_mult testMod(&context, "MATVEC");
+    Vint_fp_mult testMod(&context, "FMULT");
 
     std::random_device rd;
     gen = std::mt19937(rd());
