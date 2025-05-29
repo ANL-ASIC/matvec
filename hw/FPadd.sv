@@ -20,13 +20,13 @@ logic sum_sign;
 logic [EWIDTH - 1:0] X_exp;
 logic [EWIDTH - 1:0] Y_exp;
 logic [EWIDTH - 1:0] sum_exp, sum_exp_temp, norm_exp, round_exp;
-logic [SIG_WIDTH:0] X_sig, Y_sig;
-logic [SIG_WIDTH:0] X_aligned_sig, Y_aligned_sig;
-logic [SIG_WIDTH + 1:0] sum_significand;
+logic [SIG_WIDTH + 3:0] X_sig, Y_sig;
+logic [SIG_WIDTH + 3:0] X_aligned_sig, Y_aligned_sig;
+logic [SIG_WIDTH + 4:0] sum_significand;
 
 logic [EWIDTH:0] expdiff, abs_diff;
-logic [SIG_WIDTH + 1:0] sum_significand_temp;
-logic [SIG_WIDTH + 1:0] sum_significand_temp2;
+logic [SIG_WIDTH + 4:0] sum_significand_temp;
+logic [SIG_WIDTH + 4:0] sum_significand_temp2;
 logic [SIG_WIDTH + 3:0] norm_significand;
 // verilator lint_off UNUSEDSIGNAL
 logic [SIG_WIDTH:0] round_significand;
@@ -38,10 +38,10 @@ logic [SIG_WIDTH:0] round_significand;
     begin
         X_sign = X[31];
         X_exp = X[WIDTH - 2:SIG_WIDTH];
-        X_sig = {1'b1, X[SIG_WIDTH - 1:0]};
+        X_sig = {1'b1, X[SIG_WIDTH - 1:0], 3'd0};
         Y_sign = Y[31];
         Y_exp = Y[WIDTH - 2:SIG_WIDTH];
-        Y_sig = {1'b1, Y[SIG_WIDTH - 1:0]};
+        Y_sig = {1'b1, Y[SIG_WIDTH - 1:0], 3'd0};
 
         expdiff = X_exp - Y_exp;
         abs_diff = {1'b0, (expdiff[EWIDTH] ? ~(expdiff[EWIDTH - 1:0]) + 1'b1 : expdiff[EWIDTH - 1:0])};	//Absolute difference
@@ -54,10 +54,10 @@ logic [SIG_WIDTH:0] round_significand;
         if (!(X_sign ^ Y_sign)) begin
             sum_significand_temp = X_aligned_sig + Y_aligned_sig;
             sum_significand_temp2 = sum_significand_temp;
-            if (sum_significand_temp[SIG_WIDTH] == 1'b1) begin
+            if (sum_significand_temp[SIG_WIDTH + 3] == 1'b1) begin
                 sum_significand = sum_significand_temp;
                 sum_exp = sum_exp_temp;
-            end else if (sum_significand_temp[SIG_WIDTH + 1] == 1'b1) begin
+            end else if (sum_significand_temp[SIG_WIDTH + 4] == 1'b1) begin
                 sum_significand = sum_significand_temp >> 1;
                 sum_exp = sum_exp_temp + 1;
             end else begin
@@ -70,14 +70,14 @@ logic [SIG_WIDTH:0] round_significand;
             else
                 sum_significand_temp = X_aligned_sig - Y_aligned_sig;
 
-            if (sum_significand_temp[SIG_WIDTH + 1] == 1'b1) begin
+            if (sum_significand_temp[SIG_WIDTH + 4] == 1'b1) begin
                 sum_significand_temp2 = ~sum_significand_temp + 1;
                 sum_sign = 1'b1;
             end else begin
                 sum_significand_temp2 = sum_significand_temp;
             end
 
-            if (sum_significand_temp2[SIG_WIDTH] == 1'b1) begin
+            if (sum_significand_temp2[SIG_WIDTH + 3] == 1'b1) begin
                 sum_significand = sum_significand_temp2;
                 sum_exp = sum_exp_temp;
             end else begin
@@ -92,7 +92,7 @@ logic [SIG_WIDTH:0] round_significand;
         .EWIDTH(EWIDTH),
         .SIG_WIDTH_EXT(SIG_WIDTH + 5))
       norm(
-        .SIG_in({sum_significand, 3'd0}),
+        .SIG_in(sum_significand),
         .EXP_in(sum_exp),
         .SIG_out(norm_significand),
         .EXP_out(norm_exp));
