@@ -31,7 +31,9 @@
 //
 
 module FPround(
+// verilator lint_off UNUSEDSIGNAL
 input wire [SIG_WIDTH + 3:0] SIG_in,
+// verilator lint_on UNUSEDSIGNAL
 input wire [EWIDTH - 1:0] EXP_in,
 output reg [SIG_WIDTH:0] SIG_out,
 output wire [EWIDTH - 1:0] EXP_out
@@ -43,7 +45,7 @@ parameter SIG_WIDTH = 23;
 logic [SIG_WIDTH + 1:0] SIG_intermediate;
 
   always @(*) begin
-    if(SIG_in[2] == 1'b1 || (SIG_in[1] == 1'b1 && SIG_in[0] == 1'b1)) begin
+    if((SIG_in[2] == 1'b1 && SIG_in[1] == 1'b1) || (SIG_in[3] == 1'b1 && SIG_in[2] == 1'b1 && SIG_in[1] == 1'b0)) begin
       SIG_intermediate = {1'b0, SIG_in[SIG_WIDTH + 3:3]} + 1;
     end
     else begin
