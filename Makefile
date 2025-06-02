@@ -2,7 +2,7 @@ exe := bin/sim
 
 verilator_out := obj_dir
 
-top_mod := matvec
+top_mod := matvec_wrapper
 top_src := hw/$(top_mod).sv
 top_tb_src := tb/sim_main.cpp
 

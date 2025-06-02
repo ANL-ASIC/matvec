@@ -5,8 +5,8 @@
 #include <random>
 #include <array>
 #include <algorithm>
-#include "Vmatvec.h"
-#include "Vmatvec_matvec.h"
+#include "Vmatvec_wrapper.h"
+#include "Vmatvec_wrapper_matvec_wrapper.h"
 #include <verilated.h>
 #include <verilated_vcd_c.h>
 
@@ -14,18 +14,18 @@ static std::mt19937 gen;
 static std::uniform_int_distribution<unsigned int> dist(0, 10);
 static std::uniform_real_distribution<float> wdist(-1, 1);
 
-static void progress_one_cycle(VerilatedContext& context, Vmatvec& testMod, std::vector<unsigned int>& input, std::vector<std::vector<float>>& weights, bool acc_rst) {
+static void progress_one_cycle(VerilatedContext& context, Vmatvec_wrapper& testMod, std::vector<unsigned int>& input, std::vector<std::vector<float>>& weights, bool acc_rst) {
     testMod.eval();
     context.timeInc(1);
     testMod.clk = 0;
-    for (int i = 0; i < testMod.matvec->N; ++i) {
+    for (int i = 0; i < testMod.matvec_wrapper->N; ++i) {
         unsigned int val = dist(gen);
         testMod.in[i] = val;
         input[i] = val;
     }
 
-    for (int i = 0; i < testMod.matvec->N; ++i) {
-        for (int j = 0; j < testMod.matvec->M; ++j) {
+    for (int i = 0; i < testMod.matvec_wrapper->N; ++i) {
+        for (int j = 0; j < testMod.matvec_wrapper->M; ++j) {
             float val = wdist(gen);
             testMod.weights[i][j] = *reinterpret_cast<unsigned int *>(&val);
             weights[i][j] = val;
@@ -42,15 +42,15 @@ static void progress_one_cycle(VerilatedContext& context, Vmatvec& testMod, std:
     testMod.acc_rst = 0;
 }
 
-static bool validate(Vmatvec& testMod, std::vector<unsigned int>& input, std::vector<std::vector<float>>& weights, std::vector<float>& output, bool acc_rst) {
+static bool validate(Vmatvec_wrapper& testMod, std::vector<unsigned int>& input, std::vector<std::vector<float>>& weights, std::vector<float>& output, bool acc_rst) {
 
-    for (int i = 0; i < testMod.matvec->M; ++i) {
-        std::vector<float> sum(testMod.matvec->N, 0);
-        for (int j = 0; j < testMod.matvec->N; ++j) {
+    for (int i = 0; i < testMod.matvec_wrapper->M; ++i) {
+        std::vector<float> sum(testMod.matvec_wrapper->N, 0);
+        for (int j = 0; j < testMod.matvec_wrapper->N; ++j) {
             sum[j] = input[j] * weights[j][i];
         }
 
-        for (int l = testMod.matvec->N; l > 1; l /= 2) {
+        for (int l = testMod.matvec_wrapper->N; l > 1; l /= 2) {
             for (int j = 0; j < l; j += 2) {
                 std::cout << sum[j] << " (" << std::hex << *reinterpret_cast<int *>(&sum[j]) << ") + " << sum[j + 1] << " (" << *reinterpret_cast<int *>(&sum[j + 1]) << ") = ";
                 sum[j / 2] = sum[j] + sum[j + 1];
@@ -66,7 +66,7 @@ static bool validate(Vmatvec& testMod, std::vector<unsigned int>& input, std::ve
         output[i] += sum[0];
     }
 
-    for (int i = 0; i < testMod.matvec->M; ++i) {
+    for (int i = 0; i < testMod.matvec_wrapper->M; ++i) {
         if ((output[i] > 0 && (*reinterpret_cast<float *>(&testMod.out[i]) < .999 * output[i] || *reinterpret_cast<float *>(&testMod.out[i]) > 1.001 * output[i]))
             ||
             (output[i] < 0 && (*reinterpret_cast<float *>(&testMod.out[i]) > .999 * output[i] || *reinterpret_cast<float *>(&testMod.out[i]) < 1.001 * output[i]))) {
@@ -90,16 +90,16 @@ int main(int argc, char **argv) {
     context.traceEverOn(true);
     context.commandArgs(argc, argv);
 
-    Vmatvec testMod(&context, "MATVEC");
+    Vmatvec_wrapper testMod(&context, "MATVEC");
 
     std::random_device rd;
     gen = std::mt19937(rd());
 
-    std::vector<unsigned int> input(testMod.matvec->N);
-    std::vector<std::vector<float>> weights(testMod.matvec->N);
+    std::vector<unsigned int> input(testMod.matvec_wrapper->N);
+    std::vector<std::vector<float>> weights(testMod.matvec_wrapper->N);
 
-    for (int i = 0; i < testMod.matvec->N; ++i) {
-        weights[i] = std::vector<float>(testMod.matvec->M);
+    for (int i = 0; i < testMod.matvec_wrapper->N; ++i) {
+        weights[i] = std::vector<float>(testMod.matvec_wrapper->M);
     }
 
     testMod.clk = 0;
@@ -110,14 +110,14 @@ int main(int argc, char **argv) {
     testMod.eval();
     context.timeInc(1);
     testMod.clk = 0;
-    for (int i = 0; i < testMod.matvec->N; ++i) {
+    for (int i = 0; i < testMod.matvec_wrapper->N; ++i) {
         unsigned int val = dist(gen);
         testMod.in[i] = val;
         input[i] = val;
     }
 
-    for (int i = 0; i < testMod.matvec->N; ++i) {
-        for (int j = 0; j < testMod.matvec->M; ++j) {
+    for (int i = 0; i < testMod.matvec_wrapper->N; ++i) {
+        for (int j = 0; j < testMod.matvec_wrapper->M; ++j) {
             float val = wdist(gen);
             testMod.weights[i][j] = *reinterpret_cast<unsigned int *>(&val);
             weights[i][j] = val;
@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
 
     static const int num_sim_cycles = 16;
     bool failure = false;
-    std::vector<float> output(testMod.matvec->M);
+    std::vector<float> output(testMod.matvec_wrapper->M);
     for (int iter = 0; iter < num_sim_cycles; ++iter) {
         bool acc_rst = iter % 4 == 0;
         progress_one_cycle(context, testMod, input, weights, acc_rst);

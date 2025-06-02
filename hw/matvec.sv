@@ -18,9 +18,9 @@ module matvec #(
     parameter M /* verilator public */ = 8) (
     input clk,
     input acc_rst,
-    input [IWIDTH - 1 : 0] in[N - 1 : 0],
-    input [EWIDTH + SIGWIDTH : 0] weights[N - 1 : 0][M - 1 : 0],
-    output [EWIDTH + SIGWIDTH : 0] out[M - 1 : 0]
+    input [N - 1 : 0][IWIDTH - 1 : 0] in,
+    input [N - 1 : 0][M - 1 : 0][EWIDTH + SIGWIDTH : 0] weights,
+    output [M - 1 : 0][EWIDTH + SIGWIDTH : 0] out
 );
 
 genvar i, j;
