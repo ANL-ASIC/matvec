@@ -1,7 +1,7 @@
 `include "../SRAM/SRAM.sv"
-`include "../sram_addr_fsm/sram_addr_fsm.sv"
 `include "../SRAM/SRAM_bank.sv"
 `include "../SRAM/SRAM_block.sv"
+`include "../sram_addr_fsm/sram_addr_fsm.sv"
 `include "../hw/matvec.sv"
 
 
