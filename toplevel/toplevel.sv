@@ -1,9 +1,11 @@
 module top_level #(
     parameter pixel_data_width             = 12,
-    parameter weight_width                 = 12,
     parameter number_of_columns_per_frame  = 192,
     parameter number_of_rows_per_frame     = 168,
-    parameter K                            = 10
+    parameter K                            = 10,
+    parameter IWIDTH                       = 12,
+    parameter EWIDTH                       = 8,
+    parameter SIGWIDTH                     = 23
 )(
     input  logic clk,
     input  logic reset,
@@ -19,6 +21,8 @@ module top_level #(
     output logic [pixel_data_width + weight_width + $clog2(K) - 1:0] result
 );
 
+    localparam WWIDTH = EWIDTH + SIGWIDTH + 1;
+    
     // -----------------------------------
     // Address FSM
     // -----------------------------------
