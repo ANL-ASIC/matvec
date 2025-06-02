@@ -1,4 +1,4 @@
-`include "matvec/SRAM/SRAM_bank.sv"
+
 
 module SRAM #(
     parameter K = 10,
