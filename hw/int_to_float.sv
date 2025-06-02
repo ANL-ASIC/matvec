@@ -25,15 +25,15 @@ wire [FWIDTH - 1:0] sig;
 wire [EWIDTH - 1:0] exp;
 wire sign;
 wire [SHIFT_BITS - 1:0] shift_factor;
-reg [SHIFT_BITS - 1:0] leading_bit_pos;
-reg [$clog2(IWIDTH) - 1:0] i;
+logic [SHIFT_BITS - 1:0] leading_bit_pos;
+int i;
 
     assign sign = 1'b0; // always using unsigned integers
     always @(*) begin
         leading_bit_pos = 0;
         for (i = 0; i < IWIDTH; i = i + 1) begin
             if (in[i] == 1'b1)
-                leading_bit_pos = {{(SHIFT_BITS - $clog2(IWIDTH)){1'b0}}, i};
+                leading_bit_pos = (SHIFT_BITS)'(i);
         end
     end
 

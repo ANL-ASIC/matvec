@@ -43,11 +43,11 @@ localparam SHIFT_BITS = $clog2(SIGWIDTH + 5);
 wire [SHIFT_BITS - 1:0] shift_factor;
 wire shift_dir;
 // verilator lint_off UNUSEDSIGNAL
-reg [SIGWIDTH + 4:0] SIG_intermediate;
+logic [SIGWIDTH + 4:0] SIG_intermediate;
 // verilator lint_on UNUSEDSIGNAL
 
-reg [SHIFT_BITS - 1:0] leading_bit_pos;
-reg [SHIFT_BITS - 1:0] i;
+logic [SHIFT_BITS - 1:0] leading_bit_pos;
+int i;
 
   assign shift_dir = leading_bit_pos > (SIGWIDTH[SHIFT_BITS - 1:0] + 3);
   assign shift_factor = (SIG_in == 0 && EXP_in == 0) ? 0 :
@@ -58,7 +58,7 @@ reg [SHIFT_BITS - 1:0] i;
       leading_bit_pos = 0;
       for (i = 0; i <= SIGWIDTH + 4; i = i + 1) begin
           if (SIG_in[i] == 1'b1)
-            leading_bit_pos = i[SHIFT_BITS - 1:0];
+            leading_bit_pos = (SHIFT_BITS)'(i);
       end
   end
 

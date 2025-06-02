@@ -18,19 +18,19 @@ end
 
 wire X_sign;
 wire Y_sign;
-reg sum_sign;
+logic sum_sign;
 wire [EWIDTH - 1:0] X_exp;
 wire [EWIDTH - 1:0] Y_exp;
 wire [EWIDTH - 1:0] sum_exp, norm_exp, round_exp;
 wire [SIGWIDTH + 3:0] X_sig, Y_sig;
 wire [SIGWIDTH + 3:0] X_aligned_sig, Y_aligned_sig;
-reg [SIGWIDTH + 4:0] sum_significand;
+logic [SIGWIDTH + 4:0] sum_significand;
 
 wire [EWIDTH:0] expdiff, abs_diff;
-reg [SIGWIDTH + 4:0] sum_significand_temp;
-reg [SIGWIDTH + 3:0] norm_significand;
+logic [SIGWIDTH + 4:0] sum_significand_temp;
+logic [SIGWIDTH + 3:0] norm_significand;
 // verilator lint_off UNUSEDSIGNAL
-reg [SIGWIDTH:0] round_significand;
+logic [SIGWIDTH:0] round_significand;
 // verilator lint_on UNUSEDSIGNAL
 
     assign sum = {sum_sign, round_exp, round_significand[SIGWIDTH - 1:0]};

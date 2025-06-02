@@ -41,7 +41,7 @@ module FPpack #(
     input wire isNaN,
     input wire isINF,
     input wire isZ,
-    output reg [EWIDTH + SIGWIDTH:0] FP
+    output logic [EWIDTH + SIGWIDTH:0] FP
     );
 
 localparam WIDTH = 1 + EWIDTH + SIGWIDTH;

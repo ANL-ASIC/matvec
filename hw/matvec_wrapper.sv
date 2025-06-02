@@ -7,7 +7,7 @@ module matvec_wrapper #(
     input acc_rst,
     input [IWIDTH - 1 : 0] in[N - 1 : 0],
     input [WWIDTH - 1 : 0] weights[N - 1 : 0][M - 1 : 0],
-    output [OWIDTH - 1 : 0] out[M - 1 : 0]
+    output [WWIDTH - 1 : 0] out[M - 1 : 0]
 );
 
 `ifdef VERILATOR

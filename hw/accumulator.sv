@@ -4,7 +4,7 @@ module accumulator#(
     ) (
     input clk,
     input acc_rst,
-    input [IWIDTH * N - 1 : 0] _in,
+    input [N - 1 : 0][IWIDTH - 1 : 0] in,
     output [IWIDTH - 1 : 0] out
 );
 
@@ -16,7 +16,6 @@ wire [OWIDTH - 1 : 0] intermediates[ACCLEVELS : 0][N - 1 : 0] /* verilator split
 reg [OWIDTH - 1 : 0] acc_reg;
 wire [OWIDTH - 1 : 0] acc_in;
 wire [OWIDTH - 1 : 0] acc_out;
-wire [IWIDTH - 1 : 0] in[N - 1 : 0];
 
 genvar i, l;
 
@@ -24,7 +23,6 @@ assign acc_out = acc_reg;
 
 generate
 for (i = 0; i < N; i = i + 1) begin : mult_rows
-    assign in[i] = _in[IWIDTH * (i + 1) - 1:IWIDTH * i];
     assign intermediates[ACCLEVELS][i] = {{(OWIDTH - IWIDTH){in[i][IWIDTH - 1]}}, in[i]};
 end
 endgenerate

@@ -41,9 +41,9 @@ module FPround #(
     output wire [8 - 1:0] EXP_out
 );
 
-reg [SIGWIDTH + 1:0] SIG_intermediate;
-reg [SIGWIDTH:0] SIG_rounded;
-reg [EWIDTH - 1:0] EXP_intermediate;
+logic [SIGWIDTH + 1:0] SIG_intermediate;
+logic [SIGWIDTH:0] SIG_rounded;
+logic [EWIDTH - 1:0] EXP_intermediate;
 
   always @(*) begin
     if((SIG_in[2] == 1'b1 && SIG_in[1] == 1'b1) || (SIG_in[3] == 1'b1 && SIG_in[2] == 1'b1 && SIG_in[1] == 1'b0)) begin
