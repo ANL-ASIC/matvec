@@ -1,3 +1,7 @@
+`include "../SRAM/SRAM.sv"
+`include "../sram_addr_fsm/sram_addr_fsm.sv"
+`include "../hw/matvec.sv"
+
 module top_level #(
     parameter pixel_data_width             = 12,
     parameter number_of_columns_per_frame  = 192,
