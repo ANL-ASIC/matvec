@@ -1,14 +1,15 @@
 module accumulator#(
     parameter N = 16,
-    parameter IWIDTH = 32
-    ) (
+    parameter EWIDTH = 8,
+    parameter SIGWIDTH = 23) (
     input clk,
     input acc_rst,
-    input [N - 1 : 0][IWIDTH - 1 : 0] in,
-    output [IWIDTH - 1 : 0] out
+    input [N - 1 : 0][EWIDTH + SIGWIDTH : 0] in,
+    output [EWIDTH + SIGWIDTH : 0] out
 );
 
-localparam OWIDTH = IWIDTH;
+localparam IWIDTH = EWIDTH + SIGWIDTH + 1;
+localparam OWIDTH = EWIDTH + SIGWIDTH + 1;
 localparam ACCLEVELS = $clog2(N);
 
 wire [OWIDTH - 1 : 0] intermediates[ACCLEVELS : 0][N - 1 : 0] /* verilator split_var */;
@@ -32,7 +33,7 @@ generate
         for (i = 0; i < 2**l; i = i + 1) begin : acc_rows
             // localparam AWIDTH = IWIDTH + ACCLEVELS - l - 1;
             // add_widen #(AWIDTH) wa(intermediates[l + 1][2 * i][AWIDTH - 1 : 0], intermediates[l + 1][2 * i + 1][AWIDTH - 1 : 0], intermediates[l][i][AWIDTH : 0]);
-            FPadd #(.EWIDTH(8), .SIGWIDTH(23)) fpadd(intermediates[l + 1][2 * i][IWIDTH - 1 : 0], intermediates[l + 1][2 * i + 1][IWIDTH - 1 : 0], intermediates[l][i][IWIDTH - 1 : 0]);
+            FPadd #(.EWIDTH(EWIDTH), .SIGWIDTH(SIGWIDTH)) fpadd(intermediates[l + 1][2 * i][IWIDTH - 1 : 0], intermediates[l + 1][2 * i + 1][IWIDTH - 1 : 0], intermediates[l][i][IWIDTH - 1 : 0]);
         end
     end
 endgenerate
@@ -44,7 +45,7 @@ generate
     end
 endgenerate
 
-FPadd #(.EWIDTH(8), .SIGWIDTH(23)) fpadd((acc_rst == 1'b1 ? 0 : acc_out), intermediates[0][0], acc_in);
+FPadd #(.EWIDTH(EWIDTH), .SIGWIDTH(SIGWIDTH)) fpadd((acc_rst == 1'b1 ? 0 : acc_out), intermediates[0][0], acc_in);
 
 assign out = acc_reg;
 

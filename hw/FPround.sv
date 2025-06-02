@@ -34,11 +34,11 @@ module FPround #(
     parameter EWIDTH = 8,
     parameter SIGWIDTH = 23) (
     // verilator lint_off UNUSEDSIGNAL
-    input wire [23 + 3:0] SIG_in,
+    input wire [SIGWIDTH + 3:0] SIG_in,
     // verilator lint_on UNUSEDSIGNAL
-    input wire [8 - 1:0] EXP_in,
-    output [23:0] SIG_out,
-    output wire [8 - 1:0] EXP_out
+    input wire [EWIDTH - 1:0] EXP_in,
+    output [SIGWIDTH:0] SIG_out,
+    output wire [EWIDTH - 1:0] EXP_out
 );
 
 logic [SIGWIDTH + 1:0] SIG_intermediate;

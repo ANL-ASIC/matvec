@@ -17,15 +17,14 @@ end
 
 localparam FWIDTH = EWIDTH + SIGWIDTH + 1;
 localparam [EWIDTH - 1:0] BIAS = 2 ** (EWIDTH - 1) - 1;
-localparam SHIFT_BITS = $clog2(SIGWIDTH);
 
 // verilator lint_off UNUSEDSIGNAL
 wire [FWIDTH - 1:0] sig;
 // verilator lint_on UNUSEDSIGNAL
 wire [EWIDTH - 1:0] exp;
 wire sign;
-wire [SHIFT_BITS - 1:0] shift_factor;
-logic [SHIFT_BITS - 1:0] leading_bit_pos;
+wire [EWIDTH:0] shift_factor;
+logic [EWIDTH:0] leading_bit_pos;
 int i;
 
     assign sign = 1'b0; // always using unsigned integers
@@ -33,11 +32,11 @@ int i;
         leading_bit_pos = 0;
         for (i = 0; i < IWIDTH; i = i + 1) begin
             if (in[i] == 1'b1)
-                leading_bit_pos = (SHIFT_BITS)'(i);
+                leading_bit_pos = (EWIDTH + 1)'(i);
         end
     end
 
-    assign exp = (in == 0) ? {EWIDTH{1'b0}} : ({{(EWIDTH - SHIFT_BITS){1'b0}}, leading_bit_pos} + BIAS);
+    assign exp = (in == 0) ? {EWIDTH{1'b0}} : (EWIDTH)'(leading_bit_pos + BIAS);
     assign shift_factor = SIGWIDTH - leading_bit_pos;
     assign sig = {{(FWIDTH - IWIDTH){1'b0}}, in} << shift_factor;
 

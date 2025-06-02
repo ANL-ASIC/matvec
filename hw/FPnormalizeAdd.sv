@@ -38,27 +38,25 @@ module FPnormalizeAdd #(
     output [SIGWIDTH + 3:0] SIG_out,
     output [EWIDTH - 1:0] EXP_out);
 
-localparam SHIFT_BITS = $clog2(SIGWIDTH + 5);
-
-wire [SHIFT_BITS - 1:0] shift_factor;
+wire [EWIDTH - 1:0] shift_factor;
 wire shift_dir;
 // verilator lint_off UNUSEDSIGNAL
 logic [SIGWIDTH + 4:0] SIG_intermediate;
 // verilator lint_on UNUSEDSIGNAL
 
-logic [SHIFT_BITS - 1:0] leading_bit_pos;
+logic [EWIDTH - 1:0] leading_bit_pos;
 int i;
 
-  assign shift_dir = leading_bit_pos > (SIGWIDTH[SHIFT_BITS - 1:0] + 3);
+  assign shift_dir = leading_bit_pos > (SIGWIDTH[EWIDTH - 1:0] + 3);
   assign shift_factor = (SIG_in == 0 && EXP_in == 0) ? 0 :
-      (shift_dir == 1'b1 ? (leading_bit_pos - (SIGWIDTH[SHIFT_BITS - 1:0] + 3)) :
-      (SIGWIDTH[SHIFT_BITS - 1:0] + 3 - leading_bit_pos));
+      (shift_dir == 1'b1 ? (leading_bit_pos - (SIGWIDTH[EWIDTH - 1:0] + 3)) :
+      (SIGWIDTH[EWIDTH - 1:0] + 3 - leading_bit_pos));
 
   always @(*) begin
       leading_bit_pos = 0;
       for (i = 0; i <= SIGWIDTH + 4; i = i + 1) begin
           if (SIG_in[i] == 1'b1)
-            leading_bit_pos = (SHIFT_BITS)'(i);
+            leading_bit_pos = (EWIDTH)'(i);
       end
   end
 
@@ -66,7 +64,7 @@ int i;
     SIG_intermediate = shift_dir == 1'b1 ? (SIG_in >> shift_factor) : (SIG_in << shift_factor);
   end
 
-  assign EXP_out = shift_dir == 1'b1 ? (EXP_in + {{(EWIDTH - SHIFT_BITS){1'b0}}, shift_factor}) : (EXP_in - {{(EWIDTH - SHIFT_BITS){1'b0}}, shift_factor});
+  assign EXP_out = shift_dir == 1'b1 ? (EXP_in + shift_factor) : (EXP_in - shift_factor);
   assign SIG_out = SIG_intermediate[SIGWIDTH + 3:0];
 
 endmodule

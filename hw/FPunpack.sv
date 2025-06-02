@@ -44,8 +44,8 @@ module FPunpack #(
 
 localparam WIDTH = 1 + EWIDTH + SIGWIDTH;
 
-wire [7:0] exp_int;
-wire [22:0] sig_int;
+wire [EWIDTH - 1:0] exp_int;
+wire [SIGWIDTH - 1:0] sig_int;
 wire expZ; wire expFF; wire sigZ;
 
 assign exp_int = FP[WIDTH - 2:SIGWIDTH];

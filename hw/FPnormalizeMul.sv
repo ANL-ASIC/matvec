@@ -39,14 +39,13 @@ module FPnormalizeMul #(
     output [EWIDTH - 1:0] EXP_out);
 
 localparam SIGWIDTH_EXT = 2 * (SIGWIDTH + 1);
-localparam SHIFT_BITS = $clog2(SIGWIDTH_EXT);
 
-wire [SHIFT_BITS - 1:0] shift_factor;
+wire [EWIDTH - 1:0] shift_factor;
 // verilator lint_off UNUSEDSIGNAL
 logic [SIGWIDTH_EXT - 1:0] SIG_intermediate;
 // verilator lint_on UNUSEDSIGNAL
 
-  assign shift_factor = (SIG_in[SIGWIDTH_EXT - 1] == 1'b1 ? (SIGWIDTH_EXT[SHIFT_BITS - 1:0] - 1) : (SIGWIDTH_EXT[SHIFT_BITS - 1:0] - 2)) - (SIGWIDTH[SHIFT_BITS - 1:0] + 3);
+  assign shift_factor = (SIG_in[SIGWIDTH_EXT - 1] == 1'b1 ? (SIGWIDTH_EXT[EWIDTH - 1:0] - 1) : (SIGWIDTH_EXT[EWIDTH - 1:0] - 2)) - (SIGWIDTH[EWIDTH - 1:0] + 3);
 
   always @(*) begin
     SIG_intermediate = SIG_in >> shift_factor;

@@ -54,13 +54,13 @@ localparam WIDTH = 1 + EWIDTH + SIGWIDTH;
     end
     else if((isINF == 1'b1)) begin
       FP[WIDTH - 1] = SIGN;
-      FP[WIDTH - 2:SIGWIDTH] = 8'hFF;
-      FP[SIGWIDTH - 1:0] = {23{1'b0}};
+      FP[WIDTH - 2:SIGWIDTH] = {EWIDTH{1'b1}};
+      FP[SIGWIDTH - 1:0] = {SIGWIDTH{1'b0}};
     end
     else if((isZ == 1'b1)) begin
       FP[WIDTH - 1] = SIGN;
-      FP[WIDTH - 2:SIGWIDTH] = 8'h00;
-      FP[SIGWIDTH - 1:0] = {23{1'b0}};
+      FP[WIDTH - 2:SIGWIDTH] = {EWIDTH{1'b0}};
+      FP[SIGWIDTH - 1:0] = {SIGWIDTH{1'b0}};
     end
     else begin
       FP[WIDTH - 1] = SIGN;
