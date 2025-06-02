@@ -1,29 +1,29 @@
 module top_level #(
-    parameter pixel_data_width         = 12,
-    parameter weight_width             = 12,
-    parameter number_of_columns_per_frame = 192,
-    parameter number_of_rows_per_frame    = 168,
-    parameter K                         = 10
+    parameter pixel_data_width             = 12,
+    parameter weight_width                 = 12,
+    parameter number_of_columns_per_frame  = 192,
+    parameter number_of_rows_per_frame     = 168,
+    parameter K                            = 10
 )(
     input  logic clk,
     input  logic reset,
     input  logic SRO,
-    
-    //for sram init only/////
+
+    // SRAM init interface
     input  logic write_enable,
-    input  logic [$clog2(number_of_rows_per_frame)-1:0] write_addr; 
-    input  logic [weight_width-1:0] write_data [K-1:0][number_of_columns_per_frame-1:0];
-    ////////////////////////////
-    
-    //Main in and out
-    input  logic [pixel_data_width-1:0] pixel_data [number_of_columns_per_frame-1:0],
-    output logic [pixel_data_width + weight_width + $clog2(K)-1:0] result /////
+    input  logic [$clog2(number_of_rows_per_frame)-1:0] write_addr,
+    input  logic [weight_width-1:0][number_of_columns_per_frame-1:0][K-1:0] write_data, // packed
+
+    // Main input/output
+    input  logic [pixel_data_width-1:0][number_of_columns_per_frame-1:0] pixel_data,     // packed
+    output logic [pixel_data_width + weight_width + $clog2(K) - 1:0] result
 );
 
     // -----------------------------------
     // Address FSM
     // -----------------------------------
     logic [$clog2(number_of_rows_per_frame)-1:0] addr_out;
+
     sram_addr_fsm #(
         .SRAM_DEPTH(number_of_rows_per_frame)
     ) fsm (
@@ -36,7 +36,8 @@ module top_level #(
     // -----------------------------------
     // SRAM signals
     // -----------------------------------
-    logic [weight_width-1:0] read_data  [K-1:0][number_of_columns_per_frame-1:0];
+    logic [weight_width-1:0][number_of_columns_per_frame-1:0][K-1:0] read_data; // packed
+
     SRAM #(
         .K(K),
         .num_col_per_frame(number_of_columns_per_frame),
