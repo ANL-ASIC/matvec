@@ -1,6 +1,6 @@
-`include "../SRAM/SRAM.sv"
-`include "../sram_addr_fsm/sram_addr_fsm.sv"
-`include "../hw/matvec.sv"
+`include "../matvec/SRAM/SRAM.sv"
+`include "../matvec/sram_addr_fsm/sram_addr_fsm.sv"
+`include "../matvec/hw/matvec.sv"
 
 module top_level #(
     parameter pixel_data_width             = 12,
