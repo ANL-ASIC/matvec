@@ -57,8 +57,8 @@ module top_level #(
     matvec #(
         .IWIDTH(pixel_data_width),
         .WWIDTH(weight_width),
-        .M(number_of_columns_per_frame),
-        .N(K)
+        .M(K),
+        .N(number_of_columns_per_frame)
     ) mac (
         .clk(clk),
         .acc_rst(reset),
