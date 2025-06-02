@@ -1,4 +1,4 @@
-`include "SRAM_block.sv"
+
 
 module SRAM_bank #(
     parameter weight_width = 12,
