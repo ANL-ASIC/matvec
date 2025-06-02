@@ -3,7 +3,6 @@ module top_level #(
     parameter number_of_columns_per_frame  = 192,
     parameter number_of_rows_per_frame     = 168,
     parameter K                            = 10,
-    parameter IWIDTH                       = 12,
     parameter EWIDTH                       = 8,
     parameter SIGWIDTH                     = 23
 )(
@@ -21,7 +20,7 @@ module top_level #(
     output logic [pixel_data_width + weight_width + $clog2(K) - 1:0] result
 );
 
-    localparam WWIDTH = EWIDTH + SIGWIDTH + 1;
+    localparam weight_width = EWIDTH + SIGWIDTH + 1;
     
     // -----------------------------------
     // Address FSM
@@ -61,7 +60,8 @@ module top_level #(
     // -----------------------------------
     matvec #(
         .IWIDTH(pixel_data_width),
-        .WWIDTH(weight_width),
+        .WWIDTH(WWIDTH),
+        .EWIDTH(EWIDTH),
         .M(K),
         .N(number_of_columns_per_frame)
     ) mac (
