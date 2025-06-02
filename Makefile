@@ -2,7 +2,7 @@ exe := bin/sim
 
 verilator_out := obj_dir
 
-top_mod := matvec
+top_mod := matvec_wrapper
 top_src := hw/$(top_mod).sv
 top_tb_src := tb/sim_main.cpp
 
@@ -46,7 +46,7 @@ VERILATOR_FLAGS += --assert
 # Generate coverage analysis
 # VERILATOR_FLAGS += --coverage
 # Run make to compile model, with as many CPUs as are free
-VERILATOR_FLAGS += --build -j
+VERILATOR_FLAGS += --build -j 20
 # Run Verilator in debug mode
 #VERILATOR_FLAGS += --debug
 # Add this trace to get a backtrace in gdb

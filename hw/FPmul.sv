@@ -4,7 +4,7 @@
 
 // vhd2vl is Free (libre) Software:
 //   Copyright (C) 2001-2023 Vincenzo Liguori - Ocean Logic Pty Ltd
-//     http://www.ocean-logic.com
+//     http://www.ocean-reg.com
 //   Modifications Copyright (C) 2006 Mark Gonzales - PMC Sierra Inc
 //   Modifications (C) 2010 Shankar Giri
 //   Modifications Copyright (C) 2002-2023 Larry Doolittle
@@ -31,24 +31,24 @@
 // 2003-2004. V1.0
 //
 
-module FPmul(
-// input wire clk,
-input wire [WIDTH - 1:0] FP_A,
-input wire [WIDTH - 1:0] FP_B,
-output wire [WIDTH - 1:0] FP_Z
-);
+module FPmul #(
+    parameter EWIDTH = 8,
+    parameter SIGWIDTH = 23) (
+    input wire [EWIDTH + SIGWIDTH:0] FP_A,
+    input wire [EWIDTH + SIGWIDTH:0] FP_B,
+    output wire [EWIDTH + SIGWIDTH:0] FP_Z);
 
-parameter EWIDTH = 8;
-parameter SIG_WIDTH = 23;
-localparam WIDTH = 1 + EWIDTH + SIG_WIDTH;
+// localparam WIDTH = 1 + EWIDTH + SIGWIDTH;
 localparam BIAS = 2 ** (EWIDTH - 1) - 1;
 
+`ifdef VERILATOR
 initial begin
     $display("[%0t] Tracing to logs/vlt_dump.vcd...\n", $time);
     $dumpfile("logs/vlt_dump.vcd");
     $dumpvars();
     $display("[%0t] Model running...\n", $time);
 end
+`endif
 
 //
 // VHDL Architecture HAVOC.FPmul.single_cycle
@@ -62,13 +62,13 @@ end
 // Copyright 2003-2004. V1.0
 //
 wire [EWIDTH - 1:0] A_EXP;
-wire [SIG_WIDTH:0] A_SIG;
+wire [SIGWIDTH:0] A_SIG;
 wire A_SIGN;
 wire A_isINF;
 wire A_isNaN;
 wire A_isZ;
 wire [EWIDTH - 1:0] B_EXP;
-wire [SIG_WIDTH:0] B_SIG;
+wire [SIGWIDTH:0] B_SIG;
 wire B_SIGN;
 wire B_isINF;
 wire B_isNaN;
@@ -79,22 +79,22 @@ wire [EWIDTH - 1:0] EXP_out;
 wire [EWIDTH - 1:0] EXP_out_norm;
 wire [EWIDTH - 1:0] EXP_out_round;
 wire SIGN_out;
-wire [2 * (SIG_WIDTH + 1) - 1:0] SIG_in;
-logic SIG_isZ;
-wire [SIG_WIDTH:0] SIG_out;
-wire [SIG_WIDTH + 3:0] SIG_out_norm;
-wire [SIG_WIDTH:0] SIG_out_round;
-logic isINF;
-logic isINF_tab;
-logic isNaN;
-logic isZ;
-logic isZ_tab;
-wire [2 * (SIG_WIDTH + 1) - 1:0] prod;
+wire [2 * (SIGWIDTH + 1) - 1:0] SIG_in;
+reg SIG_isZ;
+wire [SIGWIDTH:0] SIG_out;
+wire [SIGWIDTH + 3:0] SIG_out_norm;
+wire [SIGWIDTH:0] SIG_out_round;
+reg isINF;
+reg isINF_tab;
+reg isNaN;
+wire isZ;
+reg isZ_tab;
+wire [2 * (SIGWIDTH + 1) - 1:0] prod;
 
-wire [2 * (SIG_WIDTH + 1) - 1:0] dtemp;
+wire [2 * (SIGWIDTH + 1) - 1:0] dtemp;
 
 
-  assign SIG_in = prod[2 * (SIG_WIDTH + 1) - 1:0];
+  assign SIG_in = prod[2 * (SIGWIDTH + 1) - 1:0];
   assign EXP_in = EXP_addout;
   assign SIG_out = SIG_out_round;
   assign EXP_out = EXP_out_round;
@@ -171,8 +171,6 @@ wire [2 * (SIG_WIDTH + 1) - 1:0] dtemp;
     end
   end
 
-  assign EXP_in = { ~EXP_addout[EWIDTH - 1],EXP_addout[EWIDTH - 2:0]};
-
   // check for 0 significand
   always @(*) begin
     if((EXP_out[EWIDTH - 1] == 1'b1 && ((A_EXP[EWIDTH - 1] == 1'b0 && !(A_EXP == {EWIDTH{1'b1}})) && (B_EXP[EWIDTH - 1] == 1'b0 && !(B_EXP == {EWIDTH{1'b1}}))))) begin
@@ -195,7 +193,7 @@ wire [2 * (SIG_WIDTH + 1) - 1:0] dtemp;
   assign SIGN_out = A_SIGN ^ B_SIGN;
 
   FPunpack #(
-      .SIG_WIDTH(SIG_WIDTH),
+      .SIGWIDTH(SIGWIDTH),
       .EWIDTH(EWIDTH))
       unpack0(
       .FP(FP_A),
@@ -208,7 +206,7 @@ wire [2 * (SIG_WIDTH + 1) - 1:0] dtemp;
     // .isDN(/* open */));
 
   FPunpack #(
-      .SIG_WIDTH(SIG_WIDTH),
+      .SIGWIDTH(SIGWIDTH),
       .EWIDTH(EWIDTH))
       unpack1(
       .FP(FP_B),
@@ -221,7 +219,7 @@ wire [2 * (SIG_WIDTH + 1) - 1:0] dtemp;
     // .isDN(/* open */));
 
   FPnormalizeMul #(
-      .SIG_WIDTH(SIG_WIDTH),
+      .SIGWIDTH(SIGWIDTH),
       .EWIDTH(EWIDTH))
       norm(
       .SIG_in(SIG_in),
@@ -230,7 +228,7 @@ wire [2 * (SIG_WIDTH + 1) - 1:0] dtemp;
     .EXP_out(EXP_out_norm));
 
   FPround #(
-      .SIG_WIDTH(SIG_WIDTH),
+      .SIGWIDTH(SIGWIDTH),
       .EWIDTH(EWIDTH))
       round(
     .SIG_in(SIG_out_norm),
@@ -239,7 +237,7 @@ wire [2 * (SIG_WIDTH + 1) - 1:0] dtemp;
     .EXP_out(EXP_out_round));
 
   FPpack #(
-      .SIG_WIDTH(SIG_WIDTH),
+      .SIGWIDTH(SIGWIDTH),
       .EWIDTH(EWIDTH))
       pack(
       .SIGN(SIGN_out),

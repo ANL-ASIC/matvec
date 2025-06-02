@@ -1,17 +1,17 @@
-module int_fp_mult(
+module int_fp_mult #(
+    parameter IWIDTH = 12,
+    parameter EWIDTH = 8,
+    parameter SIGWIDTH = 23) (
     input [IWIDTH - 1:0] a,
-    input [FWIDTH - 1:0] b,
-    output [FWIDTH - 1:0] c
+    input [EWIDTH + SIGWIDTH:0] b,
+    output [EWIDTH + SIGWIDTH:0] c
 );
 
-parameter IWIDTH = 12;
-parameter EWIDTH = 8;
-parameter SIG_WIDTH = 23;
-localparam FWIDTH = EWIDTH + SIG_WIDTH + 1;
+localparam FWIDTH = EWIDTH + SIGWIDTH + 1;
 
 wire [FWIDTH - 1: 0] a_float;
 
-int_to_float #(.IWIDTH(IWIDTH), .EWIDTH(EWIDTH), .SIG_WIDTH(SIG_WIDTH)) conv (a, a_float);
-FPmul #(.EWIDTH(EWIDTH), .SIG_WIDTH(SIG_WIDTH)) mult (a_float, b, c);
+int_to_float #(.IWIDTH(IWIDTH), .EWIDTH(EWIDTH), .SIGWIDTH(SIGWIDTH)) conv (a, a_float);
+FPmul #(.EWIDTH(EWIDTH), .SIGWIDTH(SIGWIDTH)) mult (a_float, b, c);
 
 endmodule
