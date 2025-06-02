@@ -10,8 +10,8 @@ module SRAM #(
     input  logic write_enable,
     input  logic [$clog2(num_row_per_frame)-1:0] addr,
     input  logic [$clog2(num_row_per_frame)-1:0] write_addr,
-    input  logic [number_of_columns_per_frame-1:0][K-1:0][weight_width-1:0] write_data, // packed
-    output logic [[number_of_columns_per_frame-1:0][K-1:0][weight_width-1:0] data_out    // packed
+    input  logic [number_of_columns_per_frame-1:0][K-1:0][weight_width-1:0] write_data, 
+    output logic [[number_of_columns_per_frame-1:0][K-1:0][weight_width-1:0] data_out    
 );
 
     genvar k;
