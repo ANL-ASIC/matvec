@@ -9,8 +9,8 @@ module SRAM_bank #(
     input  logic write_enable,
     input  logic [$clog2(num_row_per_frame)-1:0] addr,
     input  logic [$clog2(num_row_per_frame)-1:0] write_addr,
-    input  logic [num_col_per_frame-1:0][weight_width-1:0] write_data,
-    output logic [num_col_per_frame-1:0][weight_width-1:0] data_out    
+    input  logic [weight_width-1:0][num_col_per_frame-1:0] write_data,
+    output logic [weight_width-1:0][num_col_per_frame-1:0] data_out   
 );
 
     genvar i;
