@@ -9,6 +9,7 @@ module top_level #(
     input  logic clk,
     input  logic reset,
     input  logic SRO,
+    input  logic dv, 
 
     // SRAM init interface
     input  logic write_enable,
@@ -33,7 +34,8 @@ module top_level #(
         .clk(clk),
         .reset(reset),
         .SRO(SRO),
-        .addr_out(addr_out)
+        .addr_out(addr_out),
+        .dv(dv)
     );
 
     // -----------------------------------
