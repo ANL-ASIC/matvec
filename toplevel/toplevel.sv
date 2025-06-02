@@ -13,7 +13,7 @@ module top_level #(
     // SRAM init interface
     input  logic write_enable,
     input  logic [$clog2(number_of_rows_per_frame)-1:0] write_addr,
-    input  logic [number_of_columns_per_frame-1:0][K-1:0][weight_width-1:0] write_data,
+    input  logic [number_of_columns_per_frame-1:0][K-1:0][EWIDTH + SIGWIDTH:0] write_data,
 
     // Main input/output
     input  logic [number_of_columns_per_frame-1:0][pixel_data_width-1:0] pixel_data,     
