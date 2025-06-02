@@ -13,11 +13,11 @@ module top_level #(
     // SRAM init interface
     input  logic write_enable,
     input  logic [$clog2(number_of_rows_per_frame)-1:0] write_addr,
-    input  logic [weight_width-1:0][number_of_columns_per_frame-1:0][K-1:0] write_data, // packed
+    input  logic [number_of_columns_per_frame-1:0][K-1:0][weight_width-1:0] write_data,
 
     // Main input/output
-    input  logic [pixel_data_width-1:0][number_of_columns_per_frame-1:0] pixel_data,     // packed
-    output logic [pixel_data_width + weight_width + $clog2(K) - 1:0] result
+    input  logic [number_of_columns_per_frame-1:0][pixel_data_width-1:0] pixel_data,     
+    output logic [k - 1:0][EWIDTH + SIGWIDTH:0] result
 );
 
     localparam weight_width = EWIDTH + SIGWIDTH + 1;
@@ -39,7 +39,7 @@ module top_level #(
     // -----------------------------------
     // SRAM signals
     // -----------------------------------
-    logic [weight_width-1:0][number_of_columns_per_frame-1:0][K-1:0] read_data; // packed
+    logic [number_of_columns_per_frame-1:0][K-1:0][weight_width-1:0] read_data; // packed
 
     SRAM #(
         .K(K),
