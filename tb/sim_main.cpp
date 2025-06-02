@@ -24,8 +24,8 @@ static void progress_one_cycle(VerilatedContext& context, Vmatvec_wrapper& testM
         input[i] = val;
     }
 
-    for (int i = 0; i < testMod.matvec_wrapper->N; ++i) {
-        for (int j = 0; j < testMod.matvec_wrapper->M; ++j) {
+    for (int i = 0; i < testMod.matvec_wrapper->M; ++i) {
+        for (int j = 0; j < testMod.matvec_wrapper->N; ++j) {
             float val = wdist(gen);
             testMod.weights[i][j] = *reinterpret_cast<unsigned int *>(&val);
             weights[i][j] = val;
@@ -47,22 +47,22 @@ static bool validate(Vmatvec_wrapper& testMod, std::vector<unsigned int>& input,
     for (int i = 0; i < testMod.matvec_wrapper->M; ++i) {
         std::vector<float> sum(testMod.matvec_wrapper->N, 0);
         for (int j = 0; j < testMod.matvec_wrapper->N; ++j) {
-            sum[j] = input[j] * weights[j][i];
+            sum[j] = input[j] * weights[i][j];
         }
 
         for (int l = testMod.matvec_wrapper->N; l > 1; l /= 2) {
             for (int j = 0; j < l; j += 2) {
-                std::cout << sum[j] << " (" << std::hex << *reinterpret_cast<int *>(&sum[j]) << ") + " << sum[j + 1] << " (" << *reinterpret_cast<int *>(&sum[j + 1]) << ") = ";
+                // std::cout << sum[j] << " (" << std::hex << *reinterpret_cast<int *>(&sum[j]) << ") + " << sum[j + 1] << " (" << *reinterpret_cast<int *>(&sum[j + 1]) << ") = ";
                 sum[j / 2] = sum[j] + sum[j + 1];
-                std::cout << sum[j / 2] << " (" << *reinterpret_cast<int *>(&sum[j / 2]) << ")" << std::dec << std::endl;
+                // std::cout << sum[j / 2] << " (" << *reinterpret_cast<int *>(&sum[j / 2]) << ")" << std::dec << std::endl;
             }
-            std::cout << std::endl;
+            // std::cout << std::endl;
         }
 
         if (acc_rst) {
             output[i] = 0;
         }
-        std::cout << "output[" << i << "] = " << output[i] << ", sum = " << sum[0] << std::endl << std::endl;
+        // std::cout << "output[" << i << "] = " << output[i] << ", sum = " << sum[0] << std::endl << std::endl;
         output[i] += sum[0];
     }
 
@@ -70,7 +70,7 @@ static bool validate(Vmatvec_wrapper& testMod, std::vector<unsigned int>& input,
         if ((output[i] > 0 && (*reinterpret_cast<float *>(&testMod.out[i]) < .999 * output[i] || *reinterpret_cast<float *>(&testMod.out[i]) > 1.001 * output[i]))
             ||
             (output[i] < 0 && (*reinterpret_cast<float *>(&testMod.out[i]) > .999 * output[i] || *reinterpret_cast<float *>(&testMod.out[i]) < 1.001 * output[i]))) {
-            std::cout << "Detected mismatch at index " << i << ": expected '"
+            std::cerr << "Detected mismatch at index " << i << ": expected '"
                 << output[i] << "' (" << std::hex
                 << *reinterpret_cast<int *>(&output[i]) << "), but got '"
                 << *reinterpret_cast<float *>(&testMod.out[i]) << "' ("
@@ -96,10 +96,10 @@ int main(int argc, char **argv) {
     gen = std::mt19937(rd());
 
     std::vector<unsigned int> input(testMod.matvec_wrapper->N);
-    std::vector<std::vector<float>> weights(testMod.matvec_wrapper->N);
+    std::vector<std::vector<float>> weights(testMod.matvec_wrapper->M);
 
-    for (int i = 0; i < testMod.matvec_wrapper->N; ++i) {
-        weights[i] = std::vector<float>(testMod.matvec_wrapper->M);
+    for (int i = 0; i < testMod.matvec_wrapper->M; ++i) {
+        weights[i] = std::vector<float>(testMod.matvec_wrapper->N);
     }
 
     testMod.clk = 0;
@@ -116,8 +116,8 @@ int main(int argc, char **argv) {
         input[i] = val;
     }
 
-    for (int i = 0; i < testMod.matvec_wrapper->N; ++i) {
-        for (int j = 0; j < testMod.matvec_wrapper->M; ++j) {
+    for (int i = 0; i < testMod.matvec_wrapper->M; ++i) {
+        for (int j = 0; j < testMod.matvec_wrapper->N; ++j) {
             float val = wdist(gen);
             testMod.weights[i][j] = *reinterpret_cast<unsigned int *>(&val);
             weights[i][j] = val;
@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
     testMod.clk = 1;
     testMod.eval();
 
-    static const int num_sim_cycles = 16;
+    static const int num_sim_cycles = 1024;
     bool failure = false;
     std::vector<float> output(testMod.matvec_wrapper->M);
     for (int iter = 0; iter < num_sim_cycles; ++iter) {

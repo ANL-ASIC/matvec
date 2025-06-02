@@ -7,7 +7,7 @@ module matvec_wrapper #(
     input clk,
     input acc_rst,
     input [IWIDTH - 1 : 0] in[N - 1 : 0],
-    input [WWIDTH - 1 : 0] weights[N - 1 : 0][M - 1 : 0],
+    input [WWIDTH - 1 : 0] weights[M - 1 : 0][N - 1 : 0],
     output [WWIDTH - 1 : 0] out[M - 1 : 0]
 );
 
@@ -24,7 +24,7 @@ localparam WWIDTH = EWIDTH + SIGWIDTH + 1;
 localparam OWIDTH = WWIDTH;
 
 wire [IWIDTH * N - 1 : 0] _in;
-wire [WWIDTH * N * M - 1 : 0] _weights;
+wire [WWIDTH * M * N - 1 : 0] _weights;
 wire [WWIDTH * 8 - 1 : 0] _out;
 
 genvar i, j;
@@ -34,9 +34,9 @@ generate
 for (i = 0; i < N; i = i + 1) begin : in_reassign
     assign _in[IWIDTH * (i + 1) - 1:IWIDTH * i] = in[i];
 end
-for (i = 0; i < N; i = i + 1) begin : weights_reassign_rows
-    for (j = 0; j < M; j = j + 1) begin : weights_reassign
-        assign _weights[M * WWIDTH * i + WWIDTH * (j + 1) - 1:M * WWIDTH * i + WWIDTH * j] = weights[i][j];
+for (i = 0; i < M; i = i + 1) begin : weights_reassign_rows
+    for (j = 0; j < N; j = j + 1) begin : weights_reassign
+        assign _weights[N * WWIDTH * i + WWIDTH * (j + 1) - 1:N * WWIDTH * i + WWIDTH * j] = weights[i][j];
     end
 end
 for (i = 0; i < M; i = i + 1) begin : out_reassign

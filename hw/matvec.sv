@@ -19,7 +19,7 @@ module matvec #(
     input clk,
     input acc_rst,
     input [N - 1 : 0][IWIDTH - 1 : 0] in,
-    input [N - 1 : 0][M - 1 : 0][EWIDTH + SIGWIDTH : 0] weights,
+    input [M - 1 : 0][N - 1 : 0][EWIDTH + SIGWIDTH : 0] weights,
     output [M - 1 : 0][EWIDTH + SIGWIDTH : 0] out
 );
 
@@ -32,9 +32,9 @@ wire [M - 1 : 0][N - 1 : 0][WWIDTH - 1 : 0] mult_intermediates;
 generate
 
 // multipliers
-for (i = 0; i < N; i = i + 1) begin : mult_rows
-    for (j = 0; j < M; j = j + 1) begin : mult_cols
-        weight_mult #(IWIDTH, EWIDTH, SIGWIDTH) wm(in[i], weights[i][j], mult_intermediates[j][i]);
+for (i = 0; i < M; i = i + 1) begin : mult_rows
+    for (j = 0; j < N; j = j + 1) begin : mult_cols
+        weight_mult #(IWIDTH, EWIDTH, SIGWIDTH) wm(in[j], weights[i][j], mult_intermediates[i][j]);
     end
 end
 
