@@ -1,14 +1,15 @@
-module sram_addr_fsm #( 
+module sram_addr_fsm #(
     parameter SRAM_DEPTH = 168  // Number of SRAM words
-    )(
+)(
     input  logic clk,
     input  logic reset,          // Active-high reset
-    input  logic SRO,    // Indicating that the pixel frame is ready
-    output logic [$clog2(SRAM_DEPTH)-1:0] addr_out // SRAM address selection bus
+    input  logic SRO,            // Start Read Operation signal
+    input  logic dv,             // Data-valid input pulse: enables address increment
+    output logic [$clog2(SRAM_DEPTH)-1:0] addr_out // SRAM address
 );
-    
-    // Local parameter for address width
+
     localparam ADDR_WIDTH = $clog2(SRAM_DEPTH);
+
     typedef enum logic [1:0] {
         IDLE = 2'b00,
         RUN  = 2'b01
@@ -27,7 +28,7 @@ module sram_addr_fsm #(
             current_state <= next_state;
     end
 
-    // FSM Next State Logic
+    // FSM Next-State Logic
     always_comb begin
         case (current_state)
             IDLE:
@@ -37,7 +38,7 @@ module sram_addr_fsm #(
                     next_state = IDLE;
 
             RUN:
-                if (addr_reg == (SRAM_DEPTH - 1))
+                if ((addr_reg == SRAM_DEPTH - 1) && dv)
                     next_state = IDLE;
                 else
                     next_state = RUN;
@@ -46,20 +47,24 @@ module sram_addr_fsm #(
         endcase
     end
 
-    // Address Register Logic
+    // Address Register Logic (increment only when dv is high)
     always_ff @(posedge clk or posedge reset) begin
-        if (reset)
+        if (reset) begin
             addr_reg <= '0;
-        else begin
+        end else begin
             case (current_state)
-                IDLE:
-                    addr_reg <= '0;  // Always reset addr in IDLE
-                RUN: begin
-                    if (addr_reg == (SRAM_DEPTH - 1))
-                        addr_reg <= '0;
-                    else
-                        addr_reg <= addr_reg + 1;
+                IDLE: begin
+                    addr_reg <= '0;
                 end
+                RUN: begin
+                    if (dv) begin
+                        if (addr_reg < SRAM_DEPTH - 1)
+                            addr_reg <= addr_reg + 1;
+                        else
+                            addr_reg <= addr_reg; // Hold last address
+                    end
+                end
+                default: addr_reg <= '0;
             endcase
         end
     end
