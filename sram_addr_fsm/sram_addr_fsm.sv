@@ -3,7 +3,7 @@ module sram_addr_fsm #(
     )(
     input  logic clk,
     input  logic reset,          // Active-high reset
-    input  logic frame_ready,    // Indicating that the pixel frame is ready
+    input  logic SRO,    // Indicating that the pixel frame is ready
     output logic [$clog2(SRAM_DEPTH)-1:0] addr_out // SRAM address selection bus
 );
     
@@ -31,7 +31,7 @@ module sram_addr_fsm #(
     always_comb begin
         case (current_state)
             IDLE:
-                if (frame_ready)
+                if (SRO)
                     next_state = RUN;
                 else
                     next_state = IDLE;
