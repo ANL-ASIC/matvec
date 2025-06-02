@@ -7,7 +7,7 @@ module top_level #(
 )(
     input  logic clk,
     input  logic reset,
-    input  logic frame_ready,
+    input  logic SRO,
     
     //for sram init only/////
     input  logic write_enable,
@@ -29,7 +29,7 @@ module top_level #(
     ) fsm (
         .clk(clk),
         .reset(reset),
-        .frame_ready(frame_ready),
+        .SRO(SRO),
         .addr_out(addr_out)
     );
 
