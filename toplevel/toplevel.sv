@@ -1,8 +1,8 @@
-`include "../SRAM/SRAM.sv"
-`include "../SRAM/SRAM_bank.sv"
-`include "../SRAM/SRAM_block.sv"
-`include "../sram_addr_fsm/sram_addr_fsm.sv"
-`include "../hw/matvec.sv"
+`include "/local/ralsaeed/top/matvec/SRAM/SRAM.sv"
+`include "/local/ralsaeed/top/matvec/SRAM/SRAM_bank.sv"
+`include "/local/ralsaeed/top/matvec/SRAM/SRAM_block.sv"
+`include "/local/ralsaeed/top/matvec/sram_addr_fsm/sram_addr_fsm.sv"
+`include "/local/ralsaeed/top/matvec/hw/matvec.sv"
 
 
 module top_level #(
