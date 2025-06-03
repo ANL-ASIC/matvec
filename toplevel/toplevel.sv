@@ -3,6 +3,17 @@
 `include "/local/ralsaeed/top/matvec/SRAM/SRAM_block.sv"
 `include "/local/ralsaeed/top/matvec/sram_addr_fsm/sram_addr_fsm.sv"
 `include "/local/ralsaeed/top/matvec/hw/matvec.sv"
+`include "/local/ralsaeed/top/matvec/hw/FPpack.sv"
+`include "/local/ralsaeed/top/matvec/hw/FPunpack.sv"
+`include "/local/ralsaeed/top/matvec/hw/FPround.sv"
+`include "/local/ralsaeed/top/matvec/hw/FPnormalizeAdd.sv"
+`include "/local/ralsaeed/top/matvec/hw/FPnormalizeMul.sv"
+`include "/local/ralsaeed/top/matvec/hw/int_to_float.sv"
+`include "/local/ralsaeed/top/matvec/hw/FPmul.sv"
+`include "/local/ralsaeed/top/matvec/hw/int_fp_mult.sv"
+`include "/local/ralsaeed/top/matvec/hw/weight_mult.sv"
+`include "/local/ralsaeed/top/matvec/hw/FPadd.sv"
+`include "/local/ralsaeed/top/matvec/hw/accumulator.sv"
 
 
 module top_level #(
