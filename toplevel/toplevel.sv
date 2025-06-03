@@ -18,9 +18,9 @@
 
 module top_level #(
     parameter pixel_data_width             = 12,
-    parameter number_of_columns_per_frame  = 10,
-    parameter number_of_rows_per_frame     = 8,
-    parameter K                            = 10,
+    parameter number_of_columns_per_frame  = 2,
+    parameter number_of_rows_per_frame     = 2,
+    parameter K                            = 2,
     parameter EWIDTH                       = 8,
     parameter SIGWIDTH                     = 23
 )(
