@@ -1,14 +1,3 @@
-`include "FPpack.sv"
-`include "FPunpack.sv"
-`include "FPround.sv"
-`include "FPnormalizeAdd.sv"
-`include "FPnormalizeMul.sv"
-`include "int_to_float.sv"
-`include "FPmul.sv"
-`include "int_fp_mult.sv"
-`include "weight_mult.sv"
-`include "FPadd.sv"
-`include "accumulator.sv"
 
 module matvec #(
     parameter IWIDTH = 12,
