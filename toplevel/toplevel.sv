@@ -80,7 +80,7 @@ module top_level #(
     // -----------------------------------
     matvec #(
         .IWIDTH(pixel_data_width),
-        .WWIDTH(WWIDTH),
+        .SIGWIDTH(SIGWIDTH),
         .EWIDTH(EWIDTH),
         .M(K),
         .N(number_of_columns_per_frame)
