@@ -36,7 +36,7 @@ module top_level #(
 
     // Main input/output
     input  logic [number_of_columns_per_frame-1:0][pixel_data_width-1:0] pixel_data,     
-    output logic [k - 1:0][EWIDTH + SIGWIDTH:0] result
+    output logic [K - 1:0][EWIDTH + SIGWIDTH:0] result
 );
 
     localparam weight_width = EWIDTH + SIGWIDTH + 1;
