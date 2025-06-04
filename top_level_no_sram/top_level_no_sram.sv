@@ -16,11 +16,11 @@
 `include "/local/ralsaeed/top/matvec/hw/accumulator.sv"
 
 
-module top_level #(
+module top_level_no_sram #(
     parameter pixel_data_width             = 12,
-    parameter number_of_columns_per_frame  = 2,
-    parameter number_of_rows_per_frame     = 2,
-    parameter K                            = 2,
+    parameter number_of_columns_per_frame  = 192,
+    parameter number_of_rows_per_frame     = 168,
+    parameter K                            = 24,
     parameter EWIDTH                       = 8,
     parameter SIGWIDTH                     = 23
 )(
