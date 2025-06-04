@@ -28,7 +28,7 @@ module top_level_no_sram #(
     input  logic reset,
     input  logic SRO,
     input  logic dv, 
-    input  logic [K-1:0][number_of_columns_per_frame-1:0][weight_width-1:0] read_data,
+    input  logic [K-1:0][number_of_columns_per_frame-1:0][EWIDTH + SIGWIDTH:0] read_data,
 
     // SRAM init interface
     //input  logic write_enable,
