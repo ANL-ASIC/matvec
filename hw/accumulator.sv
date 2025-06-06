@@ -45,7 +45,7 @@ generate
     end
 endgenerate
 
-FPadd #(.EWIDTH(EWIDTH), .SIGWIDTH(SIGWIDTH)) fpadd((acc_rst == 1'b1 ? 0 : acc_out), intermediates[0][0], acc_in);
+    FPadd #(.EWIDTH(EWIDTH), .SIGWIDTH(SIGWIDTH)) fpadd((acc_rst == 1'b1 ? (OWIDTH)'(0) : acc_out), intermediates[0][0], acc_in);
 
 assign out = acc_reg;
 
