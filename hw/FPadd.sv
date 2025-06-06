@@ -37,10 +37,10 @@ logic [SIGWIDTH:0] round_significand;
 
     assign X_sign = X[WIDTH - 1];
     assign X_exp = X[WIDTH - 2:SIGWIDTH];
-    assign X_sig = {1'b1, X[SIGWIDTH - 1:0], 3'd0};
+    assign X_sig = {(|X_exp), X[SIGWIDTH - 1:0], 3'd0};
     assign Y_sign = Y[WIDTH - 1];
     assign Y_exp = Y[WIDTH - 2:SIGWIDTH];
-    assign Y_sig = {1'b1, Y[SIGWIDTH - 1:0], 3'd0};
+    assign Y_sig = {(|Y_exp), Y[SIGWIDTH - 1:0], 3'd0};
 
     assign sum_exp = expdiff[EWIDTH] ? Y_exp : X_exp;			//Greater exp taken
 
