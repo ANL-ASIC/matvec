@@ -3,7 +3,7 @@ module accumulator#(
     parameter EWIDTH = 8,
     parameter SIGWIDTH = 23) (
     input clk,
-    input acc_rst,
+    input do_acc,
     input [N - 1 : 0][EWIDTH + SIGWIDTH : 0] in,
     output [EWIDTH + SIGWIDTH : 0] out
 );
@@ -20,7 +20,11 @@ wire [OWIDTH - 1 : 0] acc_out;
 
 genvar i, l;
 
-assign acc_out = acc_reg;
+initial begin
+    acc_reg = (OWIDTH)'(0);
+end
+
+assign acc_in = do_acc == 1'b1 ? acc_reg : (OWIDTH)'(0) ;
 
 generate
 for (i = 0; i < N; i = i + 1) begin : mult_rows
@@ -31,21 +35,16 @@ endgenerate
 generate
     for (l = ACCLEVELS - 1; l >= 0; l = l - 1) begin : acc_lvls
         for (i = 0; i < 2**l; i = i + 1) begin : acc_rows
-            // localparam AWIDTH = IWIDTH + ACCLEVELS - l - 1;
-            // add_widen #(AWIDTH) wa(intermediates[l + 1][2 * i][AWIDTH - 1 : 0], intermediates[l + 1][2 * i + 1][AWIDTH - 1 : 0], intermediates[l][i][AWIDTH : 0]);
             FPadd #(.EWIDTH(EWIDTH), .SIGWIDTH(SIGWIDTH)) fpadd(intermediates[l + 1][2 * i][IWIDTH - 1 : 0], intermediates[l + 1][2 * i + 1][IWIDTH - 1 : 0], intermediates[l][i][IWIDTH - 1 : 0]);
         end
     end
 endgenerate
 
-generate
-    always@(posedge clk) begin
-        // acc_reg <= intermediates[0][0] + (acc_rst == 1'b1 ? 0 : acc_reg);
-        acc_reg <= acc_in;
-    end
-endgenerate
+always@(posedge clk) begin
+    acc_reg <= acc_out;
+end
 
-    FPadd #(.EWIDTH(EWIDTH), .SIGWIDTH(SIGWIDTH)) fpadd((acc_rst == 1'b1 ? (OWIDTH)'(0) : acc_out), intermediates[0][0], acc_in);
+FPadd #(.EWIDTH(EWIDTH), .SIGWIDTH(SIGWIDTH)) fpadd(acc_in, intermediates[0][0], acc_out);
 
 assign out = acc_reg;
 

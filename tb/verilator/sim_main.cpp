@@ -32,14 +32,12 @@ static void progress_one_cycle(VerilatedContext& context, Vmatvec_wrapper& testM
         }
     }
 
-    testMod.acc_rst = acc_rst;
+    testMod.do_acc = !acc_rst;
 
     testMod.eval();
     context.timeInc(1);
     testMod.clk = 1;
     testMod.eval();
-
-    testMod.acc_rst = 0;
 }
 
 static bool validate(Vmatvec_wrapper& testMod, std::vector<unsigned int>& input, std::vector<std::vector<float>>& weights, std::vector<float>& output, bool acc_rst) {

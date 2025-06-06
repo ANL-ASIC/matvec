@@ -5,7 +5,7 @@ module matvec_wrapper #(
     parameter N /* verilator public */ = 16,
     parameter M /* verilator public */ = 8) (
     input clk,
-    input acc_rst,
+    input do_acc,
     input [IWIDTH - 1 : 0] in[N - 1 : 0],
     input [WWIDTH - 1 : 0] weights[M - 1 : 0][N - 1 : 0],
     output [WWIDTH - 1 : 0] out[M - 1 : 0]
@@ -52,7 +52,7 @@ matvec#(
     .M(M))
 mv (
     clk,
-    acc_rst,
+    do_acc,
      _in,
      _weights,
      _out
