@@ -25,7 +25,7 @@ localparam OWIDTH = WWIDTH;
 
 wire [IWIDTH * N - 1 : 0] _in;
 wire [WWIDTH * M * N - 1 : 0] _weights;
-wire [WWIDTH * 8 - 1 : 0] _out;
+wire [WWIDTH * M - 1 : 0] _out;
 
 genvar i, j;
 
