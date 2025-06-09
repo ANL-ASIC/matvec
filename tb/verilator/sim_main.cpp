@@ -43,12 +43,16 @@ static void progress_one_cycle(VerilatedContext& context, Vmatvec_wrapper& testM
 static bool validate(Vmatvec_wrapper& testMod, std::vector<unsigned int>& input, std::vector<std::vector<float>>& weights, std::vector<float>& output, bool acc_rst) {
 
     for (int i = 0; i < testMod.matvec_wrapper->M; ++i) {
-        std::vector<float> sum(testMod.matvec_wrapper->N, 0);
-        for (int j = 0; j < testMod.matvec_wrapper->N; ++j) {
-            sum[j] = input[j] * weights[i][j];
+        std::vector<float> sum(input.size(), 0);
+        for (int j = 0; j < input.size(); ++j) {
+            if (j < testMod.matvec_wrapper->N) {
+                sum[j] = input[j] * weights[i][j];
+            } else {
+                sum[j] = 0;
+            }
         }
 
-        for (int l = testMod.matvec_wrapper->N; l > 1; l /= 2) {
+        for (int l = sum.size(); l > 1; l /= 2) {
             for (int j = 0; j < l; j += 2) {
                 // std::cout << sum[j] << " (" << std::hex << *reinterpret_cast<int *>(&sum[j]) << ") + " << sum[j + 1] << " (" << *reinterpret_cast<int *>(&sum[j + 1]) << ") = ";
                 sum[j / 2] = sum[j] + sum[j + 1];
@@ -93,7 +97,8 @@ int main(int argc, char **argv) {
     std::random_device rd;
     gen = std::mt19937(rd());
 
-    std::vector<unsigned int> input(testMod.matvec_wrapper->N);
+    int input_buff_len = pow(2, ceil(log2(testMod.matvec_wrapper->N)));
+    std::vector<unsigned int> input(input_buff_len, 0);
     std::vector<std::vector<float>> weights(testMod.matvec_wrapper->M);
 
     for (int i = 0; i < testMod.matvec_wrapper->M; ++i) {
