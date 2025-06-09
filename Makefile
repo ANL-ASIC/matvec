@@ -18,6 +18,9 @@ fconv_mod := int_to_float
 fconv_src := hw/$(fconv_mod).sv
 fconv_tb_src := tb/verilator/fconv.cpp
 
+N ?= 16
+K ?= 8
+
 # If $VERILATOR_ROOT isn't in the environment, we assume it is part of a
 # package install, and verilator is in your path. Otherwise find the
 # binary relative to $VERILATOR_ROOT (such as when inside the git sources).
@@ -80,7 +83,7 @@ top:
 	@echo
 	@echo "-- VERILATE ----------------"
 	$(VERILATOR) --version
-	$(VERILATOR) $(VERILATOR_FLAGS) $(top_src) $(top_tb_src)
+	$(VERILATOR) $(VERILATOR_FLAGS) -GN=$(N) -GM=$(K) $(top_src) $(top_tb_src)
 
 	# @echo
 	# @echo "-- RUN ---------------------"
