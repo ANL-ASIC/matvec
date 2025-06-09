@@ -73,6 +73,9 @@ VERILATOR_COV_FLAGS += logs/coverage.dat
 
 default: top fmul fadd fconv
 
+run_coco:
+	$(MAKE) -C tb/cocotb
+
 top:
 	@echo
 	@echo "-- VERILATE ----------------"
