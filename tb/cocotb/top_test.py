@@ -1,5 +1,5 @@
-import cocotb, math
-from cocotb.triggers import Timer, FallingEdge
+import cocotb, math, random
+from cocotb.triggers import Timer, RisingEdge
 from cocotb.binary import BinaryValue
 
 do_sim = True
@@ -99,11 +99,15 @@ def bit_string_to_float(string, exp_bits):
 
     return sign * 2 ** exp * sig
 
+def truncate_float(val, exp_bits, sig_bits):
+    return bit_string_to_float(float_to_bit_string(val, exp_bits, sig_bits), 8)
+
+
 @cocotb.test()
 async def write_to_sram_and_multiply_with_ones(dut):
     init_signals(dut)
     await cocotb.start(generate_clock(dut));
-    await FallingEdge(dut.clk);
+    await RisingEdge(dut.clk);
 
     for addr in range(dut.number_of_rows_per_frame.value):
 
@@ -119,7 +123,7 @@ async def write_to_sram_and_multiply_with_ones(dut):
                 write_data += float_to_bit_string(float((addr * dut.number_of_columns_per_frame.value) + j + 1), dut.EWIDTH.value, dut.SIGWIDTH.value)
         dut.write_data.value = BinaryValue(write_data)
 
-        await FallingEdge(dut.clk);
+        await RisingEdge(dut.clk);
 
     for i in range(dut.number_of_columns_per_frame.value):
         dut.pixel_data[i].value = 1
@@ -127,11 +131,12 @@ async def write_to_sram_and_multiply_with_ones(dut):
     dut.dv.value = 1
     dut.reset.value = 1
     dut.SRO.value = 1
-    await FallingEdge(dut.clk);
+    await RisingEdge(dut.clk);
     dut.reset.value = 0
+    await RisingEdge(dut.clk);
 
     for i in range(dut.number_of_rows_per_frame.value + 1):
-        await FallingEdge(dut.clk);
+        await RisingEdge(dut.clk);
 
     expected = 0
     for i in range(dut.number_of_rows_per_frame.value):
@@ -144,13 +149,93 @@ async def write_to_sram_and_multiply_with_ones(dut):
         print("{}: result={} ({}) expected={} ({})".format(i, result, bit_string_to_float(result, dut.EWIDTH.value), expected_str, expected))
         assert result == expected_str
 
-    await FallingEdge(dut.clk);
+    await RisingEdge(dut.clk);
     do_sim = False
+
+
+@cocotb.test()
+async def random_test(dut):
+    init_signals(dut)
+    await cocotb.start(generate_clock(dut));
+    await RisingEdge(dut.clk);
+
+    # generate weight randomly
+    weights = [[0.0] * dut.number_of_rows_per_frame.value * dut.number_of_columns_per_frame.value] * dut.K.value
+    for i in range(dut.K.value):
+        for j in range(dut.number_of_columns_per_frame.value  * dut.number_of_rows_per_frame.value):
+            weights[i][j] = truncate_float(random.uniform(-1, 1), dut.EWIDTH.value, dut.SIGWIDTH.value)
+
+    # write weights to SRAM
+    dut.write_enable.value = 1
+    for addr in range(dut.number_of_rows_per_frame.value):
+        dut.write_addr.value = addr
+
+        # print("write_data is {} by {} elements".format(len(dut.write_data) / len(dut.write_data[0]), len(dut.write_data[0]) / len(dut.write_data[0][0])))
+        write_data = ''
+        for i in range(dut.K.value):
+            for j in range(dut.number_of_columns_per_frame.value):
+                # We have to write the words in backwards order because of how the packed array is physically ordered
+                write_data += float_to_bit_string(weights[i][dut.number_of_columns_per_frame.value * addr + (dut.number_of_columns_per_frame.value - j - 1)], dut.EWIDTH.value, dut.SIGWIDTH.value)
+        dut.write_data.value = BinaryValue(write_data)
+
+        await RisingEdge(dut.clk);
+
+    # prepare to write input pixels
+    dut.write_enable.value = 0
+    dut.dv.value = 1
+    dut.reset.value = 1
+    dut.SRO.value = 1
+    await RisingEdge(dut.clk);
+    dut.reset.value = 0
+    await RisingEdge(dut.clk);
+
+    # set full frame
+    frame = [0] * dut.number_of_rows_per_frame.value * dut.number_of_columns_per_frame.value
+    for i in range(dut.number_of_rows_per_frame.value):
+        # set full row
+        for j in range(dut.number_of_columns_per_frame.value):
+            frame[dut.number_of_columns_per_frame.value * i + j] = random.randint(0, 2 ** dut.pixel_data_width.value - 1)
+            dut.pixel_data[j].value = frame[dut.number_of_columns_per_frame.value * i + j]
+
+        await RisingEdge(dut.clk);
+
+    await RisingEdge(dut.clk);
+
+    printstr = ''
+    for i in range(dut.number_of_columns_per_frame.value  * dut.number_of_rows_per_frame.value):
+        printstr += str(frame[i]) + ' '
+    print(printstr)
+    print('')
+
+    for i in range(dut.K.value):
+        printstr = ''
+        for j in range(dut.number_of_columns_per_frame.value  * dut.number_of_rows_per_frame.value):
+            printstr += str(weights[i][j]) + ' '
+        print(printstr)
+
+    # calculate expected output
+    expected_vals = [0.0] * dut.K.value
+    for i in range(dut.K.value):
+        for j in range(dut.number_of_columns_per_frame.value  * dut.number_of_rows_per_frame.value):
+            expected_vals[i] += weights[i][j] * frame[j]
+
+    for i in range(dut.K.value):
+        result_str = dut.result[i].value.binstr
+        result = bit_string_to_float(result_str, dut.EWIDTH.value)
+        expected_str = float_to_bit_string(float(expected_vals[i]), dut.EWIDTH.value, dut.SIGWIDTH.value)
+        print("{}: result={} ({}) expected={} ({})".format(i, result_str, result, expected_str, expected_vals[i]))
+        assert ((expected_vals[i] >= 0) and (result > .99999 * expected_vals[i]) and (result < 1.00001 * expected_vals[i])) or ((expected_vals[i] < 0) and (result < .99999 * expected_vals[i]) and (result > 1.00001 * expected_vals[i]))
+
+    await RisingEdge(dut.clk);
+    do_sim = False
+
 
 for i in range(-16, 17):
     conv = float_to_bit_string(i, 8, 23)
     if int_to_fp32[i] != conv:
         print('For "{}", got "{}" but expected "{}"'.format(i, conv, int_to_fp32[i]))
+    assert int_to_fp32[i] == conv
     conv = bit_string_to_float(int_to_fp32[i], 8)
     if i != conv:
         print('For "{}", got "{}" but expected "{}"'.format(int_to_fp32[i], conv, i))
+    assert i == conv
