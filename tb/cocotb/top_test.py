@@ -1,5 +1,6 @@
 import cocotb, math
 from cocotb.triggers import Timer, FallingEdge
+from cocotb.binary import BinaryValue
 
 do_sim = True
 int_to_fp32 = {
@@ -111,9 +112,12 @@ async def write_to_sram_and_multiply_with_ones(dut):
         dut.write_addr.value = addr
 
         # print("write_data is {} by {} elements".format(len(dut.write_data) / len(dut.write_data[0]), len(dut.write_data[0]) / len(dut.write_data[0][0])))
+        write_data = ''
         for i in range(dut.K.value):
             for j in range(dut.number_of_columns_per_frame.value):
-                dut.write_data[i][j].value = int(float_to_bit_string(float((addr * dut.number_of_columns_per_frame.value) + j + 1), dut.EWIDTH.value, dut.SIGWIDTH.value), 2)
+                # dut.write_data[i][j].value = int(float_to_bit_string(float((addr * dut.number_of_columns_per_frame.value) + j + 1), dut.EWIDTH.value, dut.SIGWIDTH.value), 2)
+                write_data += float_to_bit_string(float((addr * dut.number_of_columns_per_frame.value) + j + 1), dut.EWIDTH.value, dut.SIGWIDTH.value)
+        dut.write_data.value = BinaryValue(write_data)
 
         await FallingEdge(dut.clk);
 

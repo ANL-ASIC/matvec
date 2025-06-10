@@ -5,7 +5,7 @@ TOPLEVEL ?= top_level
 MODULE ?= top_test
 SIM_ARGS = +fsdb+all=on -ucli -do ucli.do
 WAVES = 1
-COMPILE_ARGS = +incdir+$(PWD)/../../hw+$(PWD)/../../SRAM+$(PWD)/../../sram_addr_fsm -pvalue+top_level.number_of_columns_per_frame=8+top_level.number_of_rows_per_frame=8+top_level.K=2
+COMPILE_ARGS = +incdir+$(PWD)/../../hw+$(PWD)/../../SRAM+$(PWD)/../../sram_addr_fsm -pvalue+top_level.number_of_columns_per_frame=192 -pvalue+top_level.number_of_rows_per_frame=168 -pvalue+top_level.K=24
 
 all: sim waveform
 
