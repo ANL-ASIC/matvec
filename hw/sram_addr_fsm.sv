@@ -20,6 +20,7 @@ module sram_addr_fsm #(
     logic [ADDR_WIDTH-1:0] addr_reg;
 
     assign addr_out = addr_reg;
+    assign do_acc = current_state == RUN && addr_reg != '0;
 
     // FSM State Register
     always_ff @(posedge clk or posedge reset) begin
@@ -68,8 +69,6 @@ module sram_addr_fsm #(
                 default: addr_reg <= '0;
             endcase
         end
-
-        do_acc <= current_state == RUN;
     end
 
 endmodule
