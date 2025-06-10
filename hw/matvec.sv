@@ -6,7 +6,7 @@ module matvec #(
     parameter N /* verilator public */ = 16,
     parameter M /* verilator public */ = 8) (
     input clk,
-    input acc_rst,
+    input do_acc,
     input [N - 1 : 0][IWIDTH - 1 : 0] in,
     input [M - 1 : 0][N - 1 : 0][EWIDTH + SIGWIDTH : 0] weights,
     output [M - 1 : 0][EWIDTH + SIGWIDTH : 0] out
@@ -29,7 +29,7 @@ end
 
 // accumulators
 for (i = 0; i < M; i = i + 1) begin : accumulators
-    accumulator #(N, EWIDTH, SIGWIDTH) acc(clk, acc_rst, mult_intermediates[i], out[i]);
+    accumulator #(N, EWIDTH, SIGWIDTH) acc(clk, do_acc, mult_intermediates[i], out[i]);
 end
 endgenerate
 

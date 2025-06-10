@@ -2,3 +2,12 @@ obj_dir
 logs
 compile_commands.json
 .nvim
+.loglogin
+__pycache__
+fsdb2vcdLog/
+novas_dump.log
+results.xml
+sim_build/
+*.fsdb
+*.vcd
+ucli.key

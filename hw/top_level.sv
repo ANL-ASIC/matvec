@@ -1,19 +1,19 @@
-`include "/local/ralsaeed/top/matvec/SRAM/SRAM.sv"
-`include "/local/ralsaeed/top/matvec/SRAM/SRAM_bank.sv"
-`include "/local/ralsaeed/top/matvec/SRAM/SRAM_block.sv"
-`include "/local/ralsaeed/top/matvec/sram_addr_fsm/sram_addr_fsm.sv"
-`include "/local/ralsaeed/top/matvec/hw/matvec.sv"
-`include "/local/ralsaeed/top/matvec/hw/FPpack.sv"
-`include "/local/ralsaeed/top/matvec/hw/FPunpack.sv"
-`include "/local/ralsaeed/top/matvec/hw/FPround.sv"
-`include "/local/ralsaeed/top/matvec/hw/FPnormalizeAdd.sv"
-`include "/local/ralsaeed/top/matvec/hw/FPnormalizeMul.sv"
-`include "/local/ralsaeed/top/matvec/hw/int_to_float.sv"
-`include "/local/ralsaeed/top/matvec/hw/FPmul.sv"
-`include "/local/ralsaeed/top/matvec/hw/int_fp_mult.sv"
-`include "/local/ralsaeed/top/matvec/hw/weight_mult.sv"
-`include "/local/ralsaeed/top/matvec/hw/FPadd.sv"
-`include "/local/ralsaeed/top/matvec/hw/accumulator.sv"
+`include "SRAM.sv"
+`include "SRAM_bank.sv"
+`include "SRAM_block.sv"
+`include "sram_addr_fsm.sv"
+`include "matvec.sv"
+`include "FPpack.sv"
+`include "FPunpack.sv"
+`include "FPround.sv"
+`include "FPnormalizeAdd.sv"
+`include "FPnormalizeMul.sv"
+`include "int_to_float.sv"
+`include "FPmul.sv"
+`include "int_fp_mult.sv"
+`include "weight_mult.sv"
+`include "FPadd.sv"
+`include "accumulator.sv"
 
 
 module top_level #(
@@ -27,7 +27,7 @@ module top_level #(
     input  logic clk,
     input  logic reset,
     input  logic SRO,
-    input  logic dv, 
+    input  logic dv,
 
     // SRAM init interface
     input  logic write_enable,
@@ -35,16 +35,17 @@ module top_level #(
     input  logic [K-1:0][number_of_columns_per_frame-1:0][EWIDTH + SIGWIDTH:0] write_data,
 
     // Main input/output
-    input  logic [number_of_columns_per_frame-1:0][pixel_data_width-1:0] pixel_data,     
+    input  logic [number_of_columns_per_frame-1:0][pixel_data_width-1:0] pixel_data,
     output logic [K - 1:0][EWIDTH + SIGWIDTH:0] result
 );
 
     localparam weight_width = EWIDTH + SIGWIDTH + 1;
-    
+
     // -----------------------------------
     // Address FSM
     // -----------------------------------
     logic [$clog2(number_of_rows_per_frame)-1:0] addr_out;
+    logic do_acc;
 
     sram_addr_fsm #(
         .SRAM_DEPTH(number_of_rows_per_frame)
@@ -52,8 +53,9 @@ module top_level #(
         .clk(clk),
         .reset(reset),
         .SRO(SRO),
-        .addr_out(addr_out),
-        .dv(dv)
+        .dv(dv),
+        .do_acc(do_acc),
+        .addr_out(addr_out)
     );
 
     // -----------------------------------
@@ -86,7 +88,7 @@ module top_level #(
         .N(number_of_columns_per_frame)
     ) mac (
         .clk(clk),
-        .acc_rst(reset),
+        .do_acc(do_acc),
         .in(pixel_data),
         .weights(read_data),
         .out(result)
