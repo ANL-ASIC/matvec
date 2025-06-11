@@ -63,7 +63,7 @@ module sram_addr_fsm #(
                         if (addr_reg < SRAM_DEPTH - 1)
                             addr_reg <= addr_reg + 1;
                         else
-                            addr_reg <= addr_reg; // Hold last address
+                            addr_reg <= '0; // resets the address to 0
                     end
                 end
                 default: addr_reg <= '0;
