@@ -237,10 +237,10 @@ def calc_matvec(dut, frame, weights):
 
 def validate_output(dut, expected_vals):
     for i in range(dut.K.value):
-        result_str = dut.result[dut.K.value - i - 1].value.binstr
-        result = bit_string_to_float(result_str, dut.EWIDTH.value)
-        expected_str = float_to_bit_string(expected_vals[i], dut.EWIDTH.value, dut.SIGWIDTH.value)
-        print("{}: result={} ({}) expected={} ({})".format(i, result_str, result, expected_str, expected_vals[i]))
+        result_binstr = dut.result[dut.K.value - i - 1].value.binstr
+        result = bit_string_to_float(result_binstr, dut.EWIDTH.value)
+        expected_binstr = float_to_bit_string(expected_vals[i], dut.EWIDTH.value, dut.SIGWIDTH.value)
+        print("{}: result={} ({}) expected={} ({})".format(i, result, result_binstr, expected_vals[i], expected_binstr))
         assert ((expected_vals[i] >= 0) and (result > .99999 * expected_vals[i]) and (result < 1.00001 * expected_vals[i])) or ((expected_vals[i] < 0) and (result < .99999 * expected_vals[i]) and (result > 1.00001 * expected_vals[i]))
 
 
@@ -273,6 +273,9 @@ async def fixed_input_test(dut):
     dut.reset.value = 0
 
     await write_frame(dut, frame)
+
+    for i in range(math.ceil(math.log2(dut.number_of_columns_per_frame.value))):
+        await RisingEdge(dut.clk)
 
     # calculate expected output
     expected_vals = calc_matvec(dut, frame, weights)
@@ -314,6 +317,9 @@ async def random_test(dut):
             print(printstr)
 
         await write_frame(dut, frame)
+
+        for i in range(math.ceil(math.log2(dut.number_of_columns_per_frame.value))):
+            await RisingEdge(dut.clk)
 
         # calculate expected output
         expected_vals = calc_matvec(dut, frame, weights)

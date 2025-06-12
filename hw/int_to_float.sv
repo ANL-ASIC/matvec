@@ -40,7 +40,14 @@ end
 assign exp = (in == 0) ? {EWIDTH{1'b0}} : (EWIDTH)'(leading_bit_pos + BIAS);
 assign shift_factor = IWIDTH - leading_bit_pos;
 assign shifted = in << shift_factor;
-assign sig = shifted[IWIDTH - 1: IWIDTH - SIGWIDTH];
+
+generate
+    if (SIGWIDTH <= IWIDTH) begin : sig_assign
+        assign sig = shifted[IWIDTH - 1: IWIDTH - 1 - SIGWIDTH];
+    end else begin : sig_assign_alt
+        assign sig = {shifted[IWIDTH - 1: 0], (SIGWIDTH - IWIDTH)'(0)};
+    end
+endgenerate
 
 assign out = {sign, exp, sig};
 
