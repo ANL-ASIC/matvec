@@ -15,7 +15,6 @@ initial begin
 end
 `endif
 
-localparam FWIDTH = EWIDTH + SIGWIDTH + 1;
 localparam [EWIDTH - 1:0] BIAS = 2 ** (EWIDTH - 1) - 1;
 
 // verilator lint_off UNUSEDSIGNAL

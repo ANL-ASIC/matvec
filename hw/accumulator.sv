@@ -48,10 +48,11 @@ generate
         localparam num_total_inputs = get_num_total_inputs(N, ACCLEVELS - 1 - l);
         localparam num_sum_inputs = num_total_inputs - (num_total_inputs % 1 == 0 ? 0 : 1);
         for (i = 0; i < num_sum_inputs / 2; i = i + 1) begin : acc_rows
-            if (l == ACCLEVELS - 1)
+            if (l == ACCLEVELS - 1) begin : first_lvl
                 FPadd #(.EWIDTH(EWIDTH), .SIGWIDTH(SIGWIDTH)) fpadd(intermediates[l + 1][2 * i][IWIDTH - 1 : 0], intermediates[l + 1][2 * i + 1][IWIDTH - 1 : 0], intermediates[l][i][IWIDTH - 1 : 0]);
-            else
+            end else begin : lvls
                 FPadd #(.EWIDTH(EWIDTH), .SIGWIDTH(SIGWIDTH)) fpadd(intermediates_reg[l + 1][2 * i][IWIDTH - 1 : 0], intermediates_reg[l + 1][2 * i + 1][IWIDTH - 1 : 0], intermediates[l][i][IWIDTH - 1 : 0]);
+            end
         end
         if (num_total_inputs % 2 == 1) begin : passthrough
             assign intermediates[l][num_total_inputs / 2][IWIDTH - 1 : 0] = intermediates[l + 1][num_total_inputs - 1][IWIDTH - 1 : 0];
@@ -61,7 +62,7 @@ endgenerate
 
 always_ff@ (posedge clk) begin
     do_acc_delayed <= {do_acc, do_acc_delayed[ACCLEVELS - 1:1]};
-    intermediates_reg = intermediates[ACCLEVELS - 1:0];
+    intermediates_reg <= intermediates[ACCLEVELS - 1:0];
     acc_reg <= acc_out;
 end
 
