@@ -23,7 +23,7 @@ generate
 // multipliers
 for (i = 0; i < M; i = i + 1) begin : mult_rows
     for (j = 0; j < N; j = j + 1) begin : mult_cols
-        weight_mult #(IWIDTH, EWIDTH, SIGWIDTH) wm(in[j], weights[i][j], mult_intermediates[i][j]);
+        int_fp_mult #(IWIDTH, EWIDTH, SIGWIDTH) mult(in[j], weights[i][j], mult_intermediates[i][j]);
     end
 end
 
