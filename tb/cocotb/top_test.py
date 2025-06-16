@@ -238,54 +238,62 @@ def calc_matvec(dut, frame, weights):
 
 
 def validate_output(dut, expected_vals):
+    err = 0.0
     for i in range(dut.K.value):
         result_binstr = dut.result[dut.K.value - i - 1].value.binstr
         result = bit_string_to_float(result_binstr, dut.EWIDTH.value)
         expected_binstr = float_to_bit_string(expected_vals[i], dut.EWIDTH.value, dut.SIGWIDTH.value)
         print("{}: result={} ({}) expected={} ({})".format(i, result, result_binstr, expected_vals[i], expected_binstr))
         assert ((expected_vals[i] >= 0) and (result > .999 * expected_vals[i]) and (result < 1.001 * expected_vals[i])) or ((expected_vals[i] < 0) and (result < .999 * expected_vals[i]) and (result > 1.001 * expected_vals[i]))
+        err += abs(result - expected_vals[i])
+    err /= dut.K.value
+
+    return err
 
 
-# @cocotb.test()
-# async def fixed_input_test(dut):
-#     init_signals(dut)
-#     await cocotb.start(generate_clock(dut))
-#     await RisingEdge(dut.clk)
-#
-#     frame = gen_all_ones_frame(dut)
-#     weights = gen_ascending_weights(dut)
-#
-#     # printstr = ''
-#     # for i in range(dut.number_of_columns_per_frame.value  * dut.number_of_rows_per_frame.value):
-#     #     printstr += str(frame[i]) + ' '
-#     # print(printstr)
-#     # print('')
-#
-#     # for i in range(dut.K.value):
-#     #     printstr = ''
-#     #     for j in range(dut.number_of_columns_per_frame.value  * dut.number_of_rows_per_frame.value):
-#     #         printstr += str(weights[i][j]) + ' '
-#     #     print(printstr)
-#
-#     await write_weights(dut, weights)
-#
-#     # reset fsm
-#     dut.reset.value = 1
-#     await RisingEdge(dut.clk)
-#     dut.reset.value = 0
-#
-#     await write_frame(dut, frame)
-#
-#     for i in range(math.ceil(math.log2(dut.number_of_columns_per_frame.value))):
-#         await RisingEdge(dut.clk)
-#
-#     # calculate expected output
-#     expected_vals = calc_matvec(dut, frame, weights)
-#
-#     validate_output(dut, expected_vals)
-#
-#     await RisingEdge(dut.clk)
-#     do_sim = False
+@cocotb.test()
+async def fixed_input_test(dut):
+    init_signals(dut)
+    await cocotb.start(generate_clock(dut))
+    await RisingEdge(dut.clk)
+
+    frame = gen_all_ones_frame(dut)
+    weights = gen_ascending_weights(dut)
+
+    # printstr = ''
+    # for i in range(dut.number_of_columns_per_frame.value  * dut.number_of_rows_per_frame.value):
+    #     printstr += str(frame[i]) + ' '
+    # print(printstr)
+    # print('')
+
+    # for i in range(dut.K.value):
+    #     printstr = ''
+    #     for j in range(dut.number_of_columns_per_frame.value  * dut.number_of_rows_per_frame.value):
+    #         printstr += str(weights[i][j]) + ' '
+    #     print(printstr)
+
+    await write_weights(dut, weights)
+
+    # reset fsm
+    dut.reset.value = 1
+    await RisingEdge(dut.clk)
+    dut.reset.value = 0
+
+    await write_frame(dut, frame)
+
+    for i in range(math.ceil(math.log2(dut.number_of_columns_per_frame.value))):
+        await RisingEdge(dut.clk)
+
+    # calculate expected output
+    expected_vals = calc_matvec(dut, frame, weights)
+
+    err = validate_output(dut, expected_vals)
+
+    err *= 100.0
+    print(f'average relative error = {err}%')
+
+    await RisingEdge(dut.clk)
+    do_sim = False
 
 
 @cocotb.test()
@@ -303,7 +311,9 @@ async def random_test(dut):
     await RisingEdge(dut.clk)
     dut.reset.value = 0
 
-    for iter in range(128):
+    err = 0.0
+    iterations = 128
+    for iter in range(iterations):
         frame = gen_random_frame(dut)
 
         printstr = ''
@@ -326,7 +336,11 @@ async def random_test(dut):
         # calculate expected output
         expected_vals = calc_matvec(dut, frame, weights)
 
-        validate_output(dut, expected_vals)
+        err += validate_output(dut, expected_vals)
+
+    err /= iterations
+    err *= 100.0
+    print(f'average relative error = {err}%')
 
     await RisingEdge(dut.clk)
     do_sim = False
