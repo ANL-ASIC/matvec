@@ -105,6 +105,8 @@ int main(int argc, char **argv) {
         weights[i] = std::vector<float>(testMod.matvec_wrapper->N);
     }
 
+    testMod.dv = 1;
+
     testMod.clk = 0;
     // testMod.start = 0;
     testMod.eval();

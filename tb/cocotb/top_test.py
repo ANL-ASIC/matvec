@@ -57,8 +57,6 @@ def init_signals(dut):
     dut.dv.value = 0
     dut.write_enable.value = 0
     dut.write_addr.value = 0
-    # dut.write_data.value = 0
-    # dut.pixel_data.value = 0
 
 
 def get_exp_and_sig(val):
@@ -145,7 +143,7 @@ def truncate_float(val, exp_bits, sig_bits):
 
 def gen_random_frame(dut):
     rng = numpy.random.default_rng()
-    return rng.normal(loc=(2 ** (dut.pixel_data_width.value - 1) - .5), scale=(2 ** dut.pixel_data_width.value / 6), size=(dut.number_of_rows_per_frame.value * dut.number_of_columns_per_frame.value))
+    return rng.normal(loc=(2 ** (dut.pixel_data_width.value - 1) - .5), scale=(2 ** dut.pixel_data_width.value / 6), size=(dut.number_of_rows_per_frame.value * dut.number_of_columns_per_frame.value)).astype(int)
 
 
 def gen_all_ones_frame(dut):
@@ -203,15 +201,24 @@ async def write_weights(dut, weights):
 
 async def write_frame(dut, frame):
     dut.SRO.value = 1
-    dut.dv.value = 1
+    # dut.dv.value = 1
 
     await RisingEdge(dut.clk)
 
     # set full frame
-    for i in range(dut.number_of_rows_per_frame.value):
-        # set full row
-        for j in range(dut.number_of_columns_per_frame.value):
-            dut.pixel_data[j].value = int(frame[dut.number_of_columns_per_frame.value * i + j])
+    i = 0
+    while i < dut.number_of_rows_per_frame.value:
+        if random.randint(0, 1) == 1:
+            dut.dv.value = 1
+            binstr = ''
+            # set full row
+            for j in range(dut.number_of_columns_per_frame.value):
+                binstr += format(frame[dut.number_of_columns_per_frame.value * i + (dut.number_of_columns_per_frame.value - j - 1)], '0' + str(dut.pixel_data_width.value) + 'b')
+            dut.pixel_data.value = BinaryValue(binstr)
+            i += 1
+        else:
+            dut.dv.value = 0
+            dut.pixel_data.value = BinaryValue(format(0, '0' + str(dut.number_of_columns_per_frame.value * dut.pixel_data_width.value) + 'b'))
 
         await RisingEdge(dut.clk)
 

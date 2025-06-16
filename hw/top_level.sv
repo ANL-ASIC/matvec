@@ -87,6 +87,7 @@ module top_level #(
     ) mac (
         .clk(clk),
         .do_acc(do_acc),
+        .dv(dv),
         .in(pixel_data),
         .weights(read_data),
         .out(result)
