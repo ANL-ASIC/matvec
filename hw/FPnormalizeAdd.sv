@@ -33,13 +33,11 @@
 module FPnormalizeAdd #(
     parameter EWIDTH = 8,
     parameter SIGWIDTH = 23) (
-    input wire [SIGWIDTH + 4:0] SIG_in,
-    input wire [EWIDTH - 1:0] EXP_in,
+    input logic [SIGWIDTH + 4:0] SIG_in,
+    input logic [EWIDTH - 1:0] EXP_in,
     output [SIGWIDTH + 3:0] SIG_out,
-    output [EWIDTH - 1:0] EXP_out);
+    output logic [EWIDTH - 1:0] EXP_out);
 
-wire [EWIDTH - 1:0] shift_factor;
-wire shift_dir;
 // verilator lint_off UNUSEDSIGNAL
 logic [SIGWIDTH + 4:0] SIG_intermediate;
 // verilator lint_on UNUSEDSIGNAL
@@ -47,24 +45,26 @@ logic [SIGWIDTH + 4:0] SIG_intermediate;
 logic [EWIDTH - 1:0] leading_bit_pos;
 int i;
 
-  assign shift_dir = leading_bit_pos > (SIGWIDTH[EWIDTH - 1:0] + 3);
-  assign shift_factor = (SIG_in == 0 && EXP_in == 0) ? 0 :
-      (shift_dir == 1'b1 ? (leading_bit_pos - (SIGWIDTH[EWIDTH - 1:0] + 3)) :
-      (SIGWIDTH[EWIDTH - 1:0] + 3 - leading_bit_pos));
+always_comb begin
+    leading_bit_pos = 0;
+    for (i = 0; i <= SIGWIDTH + 4; i = i + 1) begin
+        if (SIG_in[i] == 1'b1)
+        leading_bit_pos = (EWIDTH)'(i);
+    end
 
-  always @(*) begin
-      leading_bit_pos = 0;
-      for (i = 0; i <= SIGWIDTH + 4; i = i + 1) begin
-          if (SIG_in[i] == 1'b1)
-            leading_bit_pos = (EWIDTH)'(i);
-      end
-  end
+    if (leading_bit_pos < SIGWIDTH + 3)
+        EXP_out = EXP_in - (SIGWIDTH + 3 - leading_bit_pos);
+    else begin
+        if (SIG_in[SIGWIDTH + 4] == 1'b1)
+            EXP_out = EXP_in + 1;
+        else
+            EXP_out = EXP_in;
+    end
+end
 
-  always @(*) begin
-    SIG_intermediate = shift_dir == 1'b1 ? (SIG_in >> shift_factor) : (SIG_in << shift_factor);
-  end
+assign SIG_intermediate = SIG_in << (SIGWIDTH + 4 - leading_bit_pos);
 
-  assign EXP_out = shift_dir == 1'b1 ? (EXP_in + shift_factor) : (EXP_in - shift_factor);
-  assign SIG_out = SIG_intermediate[SIGWIDTH + 3:0];
+
+assign SIG_out = SIG_intermediate[SIGWIDTH + 4:1];
 
 endmodule

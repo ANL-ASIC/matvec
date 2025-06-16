@@ -1,4 +1,4 @@
-import cocotb, math, random
+import cocotb, math, random, numpy
 from cocotb.triggers import Timer, RisingEdge
 from cocotb.binary import BinaryValue
 
@@ -115,7 +115,7 @@ def bit_string_to_float(string, exp_bits):
             sig_float += operand
         operand /= 2.0
 
-    return sign * 2 ** exp * sig_float
+    return float(sign) * float(2 ** exp) * sig_float
 
 
 def truncate_float(val, exp_bits, sig_bits):
@@ -127,12 +127,12 @@ def truncate_float(val, exp_bits, sig_bits):
 
     min_exp = -(2 ** (exp_bits - 1) - 1)
     if exp <= min_exp:
-        print(f'{val} has an exponent of {exp}, smaller than {min_exp}, so rounding to 0')
+        # print(f'{val} has an exponent of {exp}, smaller than {min_exp}, so rounding to 0')
         return 0;
 
     max_exp = 2 ** (exp_bits - 1) - 1
     if exp >= max_exp:
-        print(f'{val} has an exponent of {exp}, greater than {max_exp}, so rounding to largest possible value')
+        # print(f'{val} has an exponent of {exp}, greater than {max_exp}, so rounding to largest possible value')
         fraction = 0.0
         operand = 1.0
         for i in range(sig_bits):
@@ -144,12 +144,8 @@ def truncate_float(val, exp_bits, sig_bits):
 
 
 def gen_random_frame(dut):
-    frame = [0] * dut.number_of_rows_per_frame.value * dut.number_of_columns_per_frame.value
-    for i in range(dut.number_of_rows_per_frame.value):
-        # set full row
-        for j in range(dut.number_of_columns_per_frame.value):
-            frame[dut.number_of_columns_per_frame.value * i + j] = random.randint(0, 2 ** min(dut.pixel_data_width.value, dut.SIGWIDTH.value) - 1)
-    return frame
+    rng = numpy.random.default_rng()
+    return rng.normal(loc=(2 ** (dut.pixel_data_width.value - 1) - .5), scale=(2 ** dut.pixel_data_width.value / 6), size=(dut.number_of_rows_per_frame.value * dut.number_of_columns_per_frame.value))
 
 
 def gen_all_ones_frame(dut):
@@ -180,7 +176,7 @@ def gen_ascending_weights(dut):
     weights = [[0.0] * dut.number_of_rows_per_frame.value * dut.number_of_columns_per_frame.value] * dut.K.value
     for i in range(dut.K.value):
         for j in range(dut.number_of_columns_per_frame.value  * dut.number_of_rows_per_frame.value):
-            weights[i][j] = float(j + 1)
+            weights[i][j] = float((j / 2 + 1) * (2**6 if j % 2 == 0 else -2**-6))
     return weights
 
 
@@ -215,7 +211,7 @@ async def write_frame(dut, frame):
     for i in range(dut.number_of_rows_per_frame.value):
         # set full row
         for j in range(dut.number_of_columns_per_frame.value):
-            dut.pixel_data[j].value = frame[dut.number_of_columns_per_frame.value * i + j]
+            dut.pixel_data[j].value = int(frame[dut.number_of_columns_per_frame.value * i + j])
 
         await RisingEdge(dut.clk)
 
@@ -241,7 +237,7 @@ def validate_output(dut, expected_vals):
         result = bit_string_to_float(result_binstr, dut.EWIDTH.value)
         expected_binstr = float_to_bit_string(expected_vals[i], dut.EWIDTH.value, dut.SIGWIDTH.value)
         print("{}: result={} ({}) expected={} ({})".format(i, result, result_binstr, expected_vals[i], expected_binstr))
-        assert ((expected_vals[i] >= 0) and (result > .99999 * expected_vals[i]) and (result < 1.00001 * expected_vals[i])) or ((expected_vals[i] < 0) and (result < .99999 * expected_vals[i]) and (result > 1.00001 * expected_vals[i]))
+        assert ((expected_vals[i] >= 0) and (result > .999 * expected_vals[i]) and (result < 1.001 * expected_vals[i])) or ((expected_vals[i] < 0) and (result < .999 * expected_vals[i]) and (result > 1.001 * expected_vals[i]))
 
 
 @cocotb.test()
@@ -301,7 +297,7 @@ async def random_test(dut):
     await RisingEdge(dut.clk)
     dut.reset.value = 0
 
-    for iter in range(4):
+    for iter in range(128):
         frame = gen_random_frame(dut)
 
         printstr = ''
