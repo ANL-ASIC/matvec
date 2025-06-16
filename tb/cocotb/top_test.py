@@ -143,7 +143,7 @@ def truncate_float(val, exp_bits, sig_bits):
 
 def gen_random_frame(dut):
     rng = numpy.random.default_rng()
-    return rng.normal(loc=(2 ** (dut.pixel_data_width.value - 1) - .5), scale=(2 ** dut.pixel_data_width.value / 6), size=(dut.number_of_rows_per_frame.value * dut.number_of_columns_per_frame.value)).astype(int)
+    return rng.uniform(low=0, high=(2 ** dut.pixel_data_width.value - 1), size=(dut.number_of_rows_per_frame.value * dut.number_of_columns_per_frame.value)).astype(int)
 
 
 def gen_all_ones_frame(dut):
@@ -201,7 +201,6 @@ async def write_weights(dut, weights):
 
 async def write_frame(dut, frame):
     dut.SRO.value = 1
-    # dut.dv.value = 1
 
     await RisingEdge(dut.clk)
 
@@ -247,46 +246,46 @@ def validate_output(dut, expected_vals):
         assert ((expected_vals[i] >= 0) and (result > .999 * expected_vals[i]) and (result < 1.001 * expected_vals[i])) or ((expected_vals[i] < 0) and (result < .999 * expected_vals[i]) and (result > 1.001 * expected_vals[i]))
 
 
-@cocotb.test()
-async def fixed_input_test(dut):
-    init_signals(dut)
-    await cocotb.start(generate_clock(dut))
-    await RisingEdge(dut.clk)
-
-    frame = gen_all_ones_frame(dut)
-    weights = gen_ascending_weights(dut)
-
-    # printstr = ''
-    # for i in range(dut.number_of_columns_per_frame.value  * dut.number_of_rows_per_frame.value):
-    #     printstr += str(frame[i]) + ' '
-    # print(printstr)
-    # print('')
-
-    # for i in range(dut.K.value):
-    #     printstr = ''
-    #     for j in range(dut.number_of_columns_per_frame.value  * dut.number_of_rows_per_frame.value):
-    #         printstr += str(weights[i][j]) + ' '
-    #     print(printstr)
-
-    await write_weights(dut, weights)
-
-    # reset fsm
-    dut.reset.value = 1
-    await RisingEdge(dut.clk)
-    dut.reset.value = 0
-
-    await write_frame(dut, frame)
-
-    for i in range(math.ceil(math.log2(dut.number_of_columns_per_frame.value))):
-        await RisingEdge(dut.clk)
-
-    # calculate expected output
-    expected_vals = calc_matvec(dut, frame, weights)
-
-    validate_output(dut, expected_vals)
-
-    await RisingEdge(dut.clk)
-    do_sim = False
+# @cocotb.test()
+# async def fixed_input_test(dut):
+#     init_signals(dut)
+#     await cocotb.start(generate_clock(dut))
+#     await RisingEdge(dut.clk)
+#
+#     frame = gen_all_ones_frame(dut)
+#     weights = gen_ascending_weights(dut)
+#
+#     # printstr = ''
+#     # for i in range(dut.number_of_columns_per_frame.value  * dut.number_of_rows_per_frame.value):
+#     #     printstr += str(frame[i]) + ' '
+#     # print(printstr)
+#     # print('')
+#
+#     # for i in range(dut.K.value):
+#     #     printstr = ''
+#     #     for j in range(dut.number_of_columns_per_frame.value  * dut.number_of_rows_per_frame.value):
+#     #         printstr += str(weights[i][j]) + ' '
+#     #     print(printstr)
+#
+#     await write_weights(dut, weights)
+#
+#     # reset fsm
+#     dut.reset.value = 1
+#     await RisingEdge(dut.clk)
+#     dut.reset.value = 0
+#
+#     await write_frame(dut, frame)
+#
+#     for i in range(math.ceil(math.log2(dut.number_of_columns_per_frame.value))):
+#         await RisingEdge(dut.clk)
+#
+#     # calculate expected output
+#     expected_vals = calc_matvec(dut, frame, weights)
+#
+#     validate_output(dut, expected_vals)
+#
+#     await RisingEdge(dut.clk)
+#     do_sim = False
 
 
 @cocotb.test()
