@@ -7,9 +7,7 @@
 `include "FPunpack.sv"
 `include "FPround.sv"
 `include "FPnormalizeAdd.sv"
-`include "FPnormalizeMul.sv"
 `include "int_to_float.sv"
-`include "FPmul.sv"
 `include "int_fp_mult.sv"
 `include "weight_mult.sv"
 `include "FPadd.sv"
@@ -89,6 +87,7 @@ module top_level #(
     ) mac (
         .clk(clk),
         .do_acc(do_acc),
+        .dv(dv),
         .in(pixel_data),
         .weights(read_data),
         .out(result)

@@ -15,30 +15,39 @@ initial begin
 end
 `endif
 
-localparam FWIDTH = EWIDTH + SIGWIDTH + 1;
 localparam [EWIDTH - 1:0] BIAS = 2 ** (EWIDTH - 1) - 1;
 
 // verilator lint_off UNUSEDSIGNAL
-wire [FWIDTH - 1:0] sig;
+wire [SIGWIDTH - 1:0] sig;
 // verilator lint_on UNUSEDSIGNAL
 wire [EWIDTH - 1:0] exp;
 wire sign;
 wire [EWIDTH:0] shift_factor;
+wire [IWIDTH - 1:0] shifted;
 logic [EWIDTH:0] leading_bit_pos;
 int i;
 
-    assign sign = 1'b0; // always using unsigned integers
-    always @(*) begin
-        leading_bit_pos = 0;
-        for (i = 0; i < IWIDTH; i = i + 1) begin
-            if (in[i] == 1'b1)
-                leading_bit_pos = (EWIDTH + 1)'(i);
-        end
+assign sign = 1'b0; // always using unsigned integers
+always @(*) begin
+    leading_bit_pos = 0;
+    for (i = 0; i < IWIDTH; i = i + 1) begin
+        if (in[i] == 1'b1)
+            leading_bit_pos = (EWIDTH + 1)'(i);
     end
+end
 
-    assign exp = (in == 0) ? {EWIDTH{1'b0}} : (EWIDTH)'(leading_bit_pos + BIAS);
-    assign shift_factor = SIGWIDTH - leading_bit_pos;
-    assign sig = {{(FWIDTH - IWIDTH){1'b0}}, in} << shift_factor;
+assign exp = (in == 0) ? {EWIDTH{1'b0}} : (EWIDTH)'(leading_bit_pos + BIAS);
+assign shift_factor = IWIDTH - leading_bit_pos;
+assign shifted = in << shift_factor;
 
-    assign out = {sign, exp, sig[SIGWIDTH - 1:0]};
+generate
+    if (SIGWIDTH <= IWIDTH) begin : sig_assign
+        assign sig = shifted[IWIDTH - 1: IWIDTH - 1 - SIGWIDTH];
+    end else begin : sig_assign_alt
+        assign sig = {shifted[IWIDTH - 1: 0], (SIGWIDTH - IWIDTH)'(0)};
+    end
+endgenerate
+
+assign out = {sign, exp, sig};
+
 endmodule

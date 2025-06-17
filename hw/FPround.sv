@@ -46,10 +46,9 @@ logic [SIGWIDTH:0] SIG_rounded;
 logic [EWIDTH - 1:0] EXP_intermediate;
 
   always @(*) begin
-    if((SIG_in[2] == 1'b1 && SIG_in[1] == 1'b1) || (SIG_in[3] == 1'b1 && SIG_in[2] == 1'b1 && SIG_in[1] == 1'b0)) begin
+    if((SIG_in[2] == 1'b1 && (SIG_in[1] == 1'b1 || SIG_in[0] == 1'b1)) || (SIG_in[3] == 1'b1 && SIG_in[2] == 1'b1)) begin
       SIG_intermediate = {1'b0, SIG_in[SIGWIDTH + 3:3]} + 1;
-    end
-    else begin
+    end else begin
       SIG_intermediate = {1'b0, SIG_in[SIGWIDTH + 3:3]};
     end
 

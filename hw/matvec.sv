@@ -7,6 +7,7 @@ module matvec #(
     parameter M /* verilator public */ = 8) (
     input clk,
     input do_acc,
+    input dv,
     input [N - 1 : 0][IWIDTH - 1 : 0] in,
     input [M - 1 : 0][N - 1 : 0][EWIDTH + SIGWIDTH : 0] weights,
     output [M - 1 : 0][EWIDTH + SIGWIDTH : 0] out
@@ -23,13 +24,13 @@ generate
 // multipliers
 for (i = 0; i < M; i = i + 1) begin : mult_rows
     for (j = 0; j < N; j = j + 1) begin : mult_cols
-        weight_mult #(IWIDTH, EWIDTH, SIGWIDTH) wm(in[j], weights[i][j], mult_intermediates[i][j]);
+        int_fp_mult #(IWIDTH, EWIDTH, SIGWIDTH) mult(in[j], weights[i][j], mult_intermediates[i][j]);
     end
 end
 
 // accumulators
 for (i = 0; i < M; i = i + 1) begin : accumulators
-    accumulator #(N, EWIDTH, SIGWIDTH) acc(clk, do_acc, mult_intermediates[i], out[i]);
+    accumulator #(N, EWIDTH, SIGWIDTH) acc(.clk(clk), .do_acc(do_acc), .dv(dv), .in(mult_intermediates[i]), .out(out[i]));
 end
 endgenerate
 
