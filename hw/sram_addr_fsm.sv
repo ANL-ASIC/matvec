@@ -40,7 +40,7 @@ module sram_addr_fsm #(
                     next_state = IDLE;
 
             RUN:
-                if ((addr_reg == SRAM_DEPTH - 1) && dv)
+                if ((addr_reg == SRAM_DEPTH - 1) && dv && ~SRO)
                     next_state = IDLE;
                 else
                     next_state = RUN;
