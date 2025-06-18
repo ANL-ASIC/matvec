@@ -6,7 +6,9 @@ module sram_addr_fsm #(
     input  logic SRO,            // Start Read Operation signal
     input  logic dv,             // Data-valid input pulse: enables address increment
     output logic do_acc,        // output signal to set accumulator register to 0
-    output logic [$clog2(SRAM_DEPTH)-1:0] addr_out // SRAM address
+    output logic [$clog2(SRAM_DEPTH)-1:0] addr_out, // SRAM address
+    output logic SRO_invalid,
+    output logic dv_invalid
 );
 
     localparam ADDR_WIDTH = $clog2(SRAM_DEPTH);
@@ -69,6 +71,9 @@ module sram_addr_fsm #(
                 default: addr_reg <= '0;
             endcase
         end
+
+        SRO_invalid <= SRO == 1'b1 && (current_state == RUN && addr_reg != SRAM_DEPTH - 1);
+        dv_invalid <= dv == 1'b1 && current_state == IDLE;
     end
 
 endmodule

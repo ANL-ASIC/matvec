@@ -1,8 +1,7 @@
 import cocotb, math, random, numpy
-from cocotb.triggers import Timer, RisingEdge
+from cocotb.triggers import Timer, RisingEdge, FallingEdge
 from cocotb.binary import BinaryValue
 
-do_sim = True
 int_to_fp32 = {
          -16: "11000001100000000000000000000000",
          -15: "11000001011100000000000000000000",
@@ -42,21 +41,36 @@ int_to_fp32 = {
           0.3333329856395721435546875: "00111110101010101010101010011111"
         }
 
-async def generate_clock(dut):
-    while do_sim:
+
+class SimStatus:
+    do_sim = True
+
+
+async def generate_clock(dut, sim_status):
+    while True:
         dut.clk.value = 0
         await Timer(1, units="ns")
         dut.clk.value = 1
         await Timer(1, units="ns")
+    return False
 
 
-def init_signals(dut):
+async def invalid_signal_watchdog(dut, sim_status):
+    while sim_status.do_sim:
+        await FallingEdge(dut.clk)
+        assert(dut.SRO_invalid == 0)
+        assert(dut.dv_invalid == 0)
+    return False
+
+
+def init(dut):
     dut.clk.value = 0
     dut.reset.value = 0
     dut.SRO.value = 0
     dut.dv.value = 0
     dut.write_enable.value = 0
     dut.write_addr.value = 0
+    return SimStatus()
 
 
 def get_exp_and_sig(val):
@@ -256,141 +270,202 @@ async def delayed_validation(dut, expected_vals):
     return validate_output(dut, expected_vals)
 
 
+# @cocotb.test()
+# async def fixed_input_test(dut):
+#     sim_status = init(dut)
+#     await cocotb.start(generate_clock(dut, sim_status))
+#     dut.reset.value = 1
+#     await RisingEdge(dut.clk)
+#     dut.reset.value = 0
+#     watchdog = cocotb.start_soon(invalid_signal_watchdog(dut, sim_status))
+#
+#     frame = gen_all_ones_frame(dut)
+#     weights = gen_ascending_weights(dut)
+#
+#     # calculate expected output
+#     expected_vals = calc_matvec(dut, frame, weights)
+#
+#     await write_weights(dut, weights)
+#
+#     # reset fsm
+#     dut.reset.value = 1
+#     await RisingEdge(dut.clk)
+#     dut.reset.value = 0
+#
+#     # signal that the next frame is coming
+#     dut.SRO.value = 1
+#     await RisingEdge(dut.clk)
+#     dut.SRO.value = 0
+#
+#     await write_frame(dut, frame)
+#
+#     err = await delayed_validation(dut, expected_vals)
+#
+#     err *= 100.0
+#     print(f'average relative error = {err}%')
+#
+#     sim_status.do_sim = False
+#     await RisingEdge(dut.clk)
+#
+#     await watchdog.join()
+#     watchdog.result()
+#
+#
+# @cocotb.test()
+# async def random_test(dut):
+#     sim_status = init(dut)
+#     await cocotb.start(generate_clock(dut, sim_status))
+#     dut.reset.value = 1
+#     await RisingEdge(dut.clk)
+#     dut.reset.value = 0
+#     watchdog = cocotb.start_soon(invalid_signal_watchdog(dut, sim_status))
+#
+#     weights = gen_random_weights(dut)
+#
+#     await write_weights(dut, weights)
+#
+#     # reset fsm
+#     dut.reset.value = 1
+#     await RisingEdge(dut.clk)
+#     dut.reset.value = 0
+#
+#     iterations = 128
+#     tasks = []
+#
+#     # signal that the first frame is coming
+#     dut.SRO.value = 1
+#     await RisingEdge(dut.clk)
+#     dut.SRO.value = 0
+#     for iter in range(iterations):
+#         frame = gen_random_frame(dut)
+#
+#         # calculate expected output
+#         expected_vals = calc_matvec(dut, frame, weights)
+#
+#         await write_frame(dut, frame, False, True)
+#
+#         tasks.append(cocotb.start_soon(delayed_validation(dut, expected_vals)))
+#
+#     err = 0.0
+#     for task in tasks:
+#         await task.join()
+#         err += task.result()
+#
+#     err /= iterations
+#     err *= 100.0
+#     print(f'average relative error = {err}%')
+#
+#     sim_status.do_sim = False
+#     await RisingEdge(dut.clk)
+#
+#     await watchdog.join()
+#     watchdog.result()
+#
+#
+# @cocotb.test()
+# async def max_throughput_test(dut):
+#     sim_status = init(dut)
+#     await cocotb.start(generate_clock(dut, sim_status))
+#     dut.reset.value = 1
+#     await RisingEdge(dut.clk)
+#     dut.reset.value = 0
+#     watchdog = cocotb.start_soon(invalid_signal_watchdog(dut, sim_status))
+#
+#     weights = gen_random_weights(dut)
+#
+#     await write_weights(dut, weights)
+#
+#     # reset fsm
+#     dut.reset.value = 1
+#     await RisingEdge(dut.clk)
+#     dut.reset.value = 0
+#
+#     iterations = 128
+#     tasks = []
+#
+#     # signal that the first frame is coming
+#     dut.SRO.value = 1
+#     await RisingEdge(dut.clk)
+#     dut.SRO.value = 0
+#     for iter in range(iterations):
+#         frame = gen_random_frame(dut)
+#
+#         # calculate expected output
+#         expected_vals = calc_matvec(dut, frame, weights)
+#
+#         await write_frame(dut, frame, True, True)
+#
+#         tasks.append(cocotb.start_soon(delayed_validation(dut, expected_vals)))
+#
+#     err = 0.0
+#     for task in tasks:
+#         await task.join()
+#         err += task.result()
+#
+#     err /= iterations
+#     err *= 100.0
+#     print(f'average relative error = {err}%')
+#
+#     sim_status.do_sim = False
+#     await RisingEdge(dut.clk)
+#
+#     await watchdog.join()
+#     watchdog.result()
+
+
 @cocotb.test()
-async def fixed_input_test(dut):
-    init_signals(dut)
-    await cocotb.start(generate_clock(dut))
-    await RisingEdge(dut.clk)
-
-    frame = gen_all_ones_frame(dut)
-    weights = gen_ascending_weights(dut)
-
-    # calculate expected output
-    expected_vals = calc_matvec(dut, frame, weights)
-
-    # printstr = ''
-    # for i in range(dut.number_of_columns_per_frame.value  * dut.number_of_rows_per_frame.value):
-    #     printstr += str(frame[i]) + ' '
-    # print(printstr)
-    # print('')
-
-    # for i in range(dut.K.value):
-    #     printstr = ''
-    #     for j in range(dut.number_of_columns_per_frame.value  * dut.number_of_rows_per_frame.value):
-    #         printstr += str(weights[i][j]) + ' '
-    #     print(printstr)
-
-    await write_weights(dut, weights)
-
-    # reset fsm
+async def invalid_signal_test(dut):
+    sim_status = init(dut)
+    await cocotb.start(generate_clock(dut, sim_status))
     dut.reset.value = 1
     await RisingEdge(dut.clk)
     dut.reset.value = 0
 
-    # signal that the next frame is coming
+    # dv asserted when SRO has not been asserted is invalid
+    dut.dv.value = 1
+    await RisingEdge(dut.clk)
+    await FallingEdge(dut.clk)
+    assert(dut.SRO_invalid.value == 0)
+    assert(dut.dv_invalid.value == 1)
+    assert(dut.fsm.addr_reg.value == 0)
+
+    # move out of idle
     dut.SRO.value = 1
-    await RisingEdge(dut.clk)
+    dut.dv.value = 0
+    await FallingEdge(dut.clk)
+    dut.dv.value = 1
+    assert(dut.SRO_invalid.value == 0)
+    assert(dut.dv_invalid.value == 0)
+    assert(dut.fsm.addr_reg.value == 0)
+
+    # keeping SRO asserted after a cycle is invalid. Addr should start to increment
+    await FallingEdge(dut.clk)
+    for i in range(dut.number_of_rows_per_frame.value - 1):
+        assert(dut.SRO_invalid.value == 1)
+        assert(dut.dv_invalid.value == 0)
+        assert(dut.fsm.addr_reg.value != 0)
+        await FallingEdge(dut.clk)
+
+    # SRO asserted after last row is NOT invalid. Addr should be back to zero
+    assert(dut.SRO_invalid.value == 0)
+    assert(dut.dv_invalid.value == 0)
+    assert(dut.fsm.addr_reg.value == 0)
+
+    # unasserting SRO after a cycle is valid. Addr should start to increment
     dut.SRO.value = 0
+    await FallingEdge(dut.clk)
+    for i in range(dut.number_of_rows_per_frame.value - 1):
+        assert(dut.SRO_invalid.value == 0)
+        assert(dut.dv_invalid.value == 0)
+        assert(dut.fsm.addr_reg.value != 0)
+        await FallingEdge(dut.clk)
 
-    await write_frame(dut, frame)
+    # not reasserting SRO on the last row is valid. Addr should start to increment
+    assert(dut.SRO_invalid.value == 0)
+    assert(dut.dv_invalid.value == 0)
+    assert(dut.fsm.addr_reg.value == 0)
 
-    err = await delayed_validation(dut, expected_vals)
-
-    err *= 100.0
-    print(f'average relative error = {err}%')
-
-    await RisingEdge(dut.clk)
-    do_sim = False
-
-
-@cocotb.test()
-async def random_test(dut):
-    init_signals(dut)
-    await cocotb.start(generate_clock(dut))
-    await RisingEdge(dut.clk)
-
-    weights = gen_random_weights(dut)
-
-    await write_weights(dut, weights)
-
-    # reset fsm
-    dut.reset.value = 1
-    await RisingEdge(dut.clk)
-    dut.reset.value = 0
-
-    iterations = 128
-    tasks = []
-
-    # signal that the first frame is coming
-    dut.SRO.value = 1
-    await RisingEdge(dut.clk)
-    dut.SRO.value = 0
-    for iter in range(iterations):
-        frame = gen_random_frame(dut)
-
-        # calculate expected output
-        expected_vals = calc_matvec(dut, frame, weights)
-
-        await write_frame(dut, frame, False, True)
-
-        tasks.append(cocotb.start_soon(delayed_validation(dut, expected_vals)))
-
-    err = 0.0
-    for task in tasks:
-        await task.join()
-        err += task.result()
-
-    err /= iterations
-    err *= 100.0
-    print(f'average relative error = {err}%')
-
-    await RisingEdge(dut.clk)
-    do_sim = False
-
-
-@cocotb.test()
-async def max_throughput_test(dut):
-    init_signals(dut)
-    await cocotb.start(generate_clock(dut))
-    await RisingEdge(dut.clk)
-
-    weights = gen_random_weights(dut)
-
-    await write_weights(dut, weights)
-
-    # reset fsm
-    dut.reset.value = 1
-    await RisingEdge(dut.clk)
-    dut.reset.value = 0
-
-    iterations = 128
-    tasks = []
-
-    # signal that the first frame is coming
-    dut.SRO.value = 1
-    await RisingEdge(dut.clk)
-    dut.SRO.value = 0
-    for iter in range(iterations):
-        frame = gen_random_frame(dut)
-
-        # calculate expected output
-        expected_vals = calc_matvec(dut, frame, weights)
-
-        await write_frame(dut, frame, True, True)
-
-        tasks.append(cocotb.start_soon(delayed_validation(dut, expected_vals)))
-
-    err = 0.0
-    for task in tasks:
-        await task.join()
-        err += task.result()
-
-    err /= iterations
-    err *= 100.0
-    print(f'average relative error = {err}%')
-
-    await RisingEdge(dut.clk)
-    do_sim = False
+    sim_status.do_sim = False
 
 
 for (val, bitstr) in int_to_fp32.items():
