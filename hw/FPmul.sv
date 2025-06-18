@@ -98,7 +98,7 @@ logic [2 * (SIGWIDTH + 1) - 1:0] dtemp;
   assign EXP_in = EXP_addout;
   assign SIG_out = SIG_out_round;
   assign EXP_out = EXP_out_round;
-  always @(*) begin
+  always_comb begin
     if(isZ == 1'b0) begin
       if(isINF_tab == 1'b1) begin
         isINF = 1'b1;
@@ -118,7 +118,7 @@ logic [2 * (SIGWIDTH + 1) - 1:0] dtemp;
     end
   end
 
-  always @(*) begin : P3
+  always_comb begin : P3
     if((A_isINF == 1'b0) && (A_isNaN == 1'b0) && (A_isZ == 1'b0) && (B_isINF == 1'b0) && (B_isNaN == 1'b0) && (B_isZ == 1'b0)) begin
       isZ_tab = 1'b0;
       isINF_tab = 1'b0;
@@ -172,7 +172,7 @@ logic [2 * (SIGWIDTH + 1) - 1:0] dtemp;
   end
 
   // check for 0 significand
-  always @(*) begin
+  always_comb begin
     if((EXP_out[EWIDTH - 1] == 1'b1 && ((A_EXP[EWIDTH - 1] == 1'b0 && !(A_EXP == {EWIDTH{1'b1}})) && (B_EXP[EWIDTH - 1] == 1'b0 && !(B_EXP == {EWIDTH{1'b1}}))))) begin
       // Underflow or zero significand
       SIG_isZ = 1'b1;

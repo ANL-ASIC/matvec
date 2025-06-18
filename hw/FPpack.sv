@@ -46,7 +46,7 @@ module FPpack #(
 
 localparam WIDTH = 1 + EWIDTH + SIGWIDTH;
 
-  always @(*) begin
+  always_comb begin
     if((isNaN == 1'b1)) begin
       FP[WIDTH - 1] = SIGN;
       FP[WIDTH - 2:SIGWIDTH] = {EWIDTH{1'b1}};

@@ -47,7 +47,7 @@ logic [SIGWIDTH_EXT - 1:0] SIG_intermediate;
 
   assign shift_factor = (SIG_in[SIGWIDTH_EXT - 1] == 1'b1 ? (SIGWIDTH_EXT[EWIDTH - 1:0] - 1) : (SIGWIDTH_EXT[EWIDTH - 1:0] - 2)) - (SIGWIDTH[EWIDTH - 1:0] + 3);
 
-  always @(*) begin
+  always_comb begin
     SIG_intermediate = SIG_in >> shift_factor;
   end
 

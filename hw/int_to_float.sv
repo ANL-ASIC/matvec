@@ -28,7 +28,7 @@ logic [EWIDTH:0] leading_bit_pos;
 int i;
 
 assign sign = 1'b0; // always using unsigned integers
-always @(*) begin
+always_comb begin
     leading_bit_pos = 0;
     for (i = 0; i < IWIDTH; i = i + 1) begin
         if (in[i] == 1'b1)
