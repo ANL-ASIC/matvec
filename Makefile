@@ -76,8 +76,12 @@ VERILATOR_COV_FLAGS += logs/coverage.dat
 
 default: top fmul fadd fconv
 
+clean:
+	rm -rf obj_dir
+	cd tb/cocotb && $(MAKE) clean
+
 run_coco:
-	$(MAKE) -C tb/cocotb
+	cd tb/cocotb && $(MAKE)
 
 top:
 	@echo
