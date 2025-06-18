@@ -14,12 +14,12 @@ localparam SHIFTWIDTH = $clog2(SIGWIDTH + IWIDTH + 1);
 logic is_zero;
 
 logic b_sign, c_sign;
-logic [EWIDTH - 1:0] b_exp, c_exp;
+logic [EWIDTH - 1:0] b_exp, c_exp, c_exp_unrounded;
 logic [SIGWIDTH:0] b_sig;
 
 // verilator lint_off UNUSEDSIGNAL
 logic [SIGWIDTH:0] c_sig;
-logic [PRODWIDTH - 1:0] c_sig_ext;
+logic [PRODWIDTH - 1:0] c_sig_unrounded;
 // verilator lint_onn UNUSEDSIGNAL
 
 logic [SHIFTWIDTH - 1:0] leading_bit_index;
@@ -44,9 +44,18 @@ always_comb begin
 end
 
 assign c_sign = b_sign;
-assign c_exp =  b_exp + ((EWIDTH)'(leading_bit_index) - (EWIDTH)'(SIGWIDTH));
-assign c_sig_ext = product << (PRODWIDTH - 1 - leading_bit_index);
-assign c_sig = c_sig_ext[PRODWIDTH - 1:IWIDTH];
+assign c_exp_unrounded = b_exp + ((EWIDTH)'(leading_bit_index) - (EWIDTH)'(SIGWIDTH));
+assign c_sig_unrounded = product << (PRODWIDTH - 1 - leading_bit_index);
+
+FPround #(
+    .SIGWIDTH(SIGWIDTH),
+    .EWIDTH(EWIDTH))
+    round(
+    .EXP_in(c_exp_unrounded),
+    .SIG_in(c_sig_unrounded[PRODWIDTH - 1:PRODWIDTH - (SIGWIDTH + 3) - 1]),
+    .EXP_out(c_exp),
+    .SIG_out(c_sig));
+
 assign c = is_zero == 1'b1 ? '0 : {c_sign, c_exp, c_sig[SIGWIDTH - 1:0]};
 
 endmodule
