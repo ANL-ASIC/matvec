@@ -1,7 +1,7 @@
 module add_widen(
-    input wire [WIDTH - 1 : 0] a,
-    input wire [WIDTH - 1 : 0] b,
-    output wire [OWIDTH - 1 : 0] c
+    input logic [WIDTH - 1 : 0] a,
+    input logic [WIDTH - 1 : 0] b,
+    output logic [OWIDTH - 1 : 0] c
 );
 
 parameter WIDTH = 16;

@@ -4,7 +4,7 @@
 
 // vhd2vl is Free (libre) Software:
 //   Copyright (C) 2001-2023 Vincenzo Liguori - Ocean Logic Pty Ltd
-//     http://www.ocean-reg.com
+//     http://www.ocean-logic.com
 //   Modifications Copyright (C) 2006 Mark Gonzales - PMC Sierra Inc
 //   Modifications (C) 2010 Shankar Giri
 //   Modifications Copyright (C) 2002-2023 Larry Doolittle
@@ -34,9 +34,9 @@
 module FPmul #(
     parameter EWIDTH = 8,
     parameter SIGWIDTH = 23) (
-    input wire [EWIDTH + SIGWIDTH:0] FP_A,
-    input wire [EWIDTH + SIGWIDTH:0] FP_B,
-    output wire [EWIDTH + SIGWIDTH:0] FP_Z);
+    input logic [EWIDTH + SIGWIDTH:0] FP_A,
+    input logic [EWIDTH + SIGWIDTH:0] FP_B,
+    output logic [EWIDTH + SIGWIDTH:0] FP_Z);
 
 // localparam WIDTH = 1 + EWIDTH + SIGWIDTH;
 localparam BIAS = 2 ** (EWIDTH - 1) - 1;
@@ -61,37 +61,37 @@ end
 //
 // Copyright 2003-2004. V1.0
 //
-wire [EWIDTH - 1:0] A_EXP;
-wire [SIGWIDTH:0] A_SIG;
-wire A_SIGN;
-wire A_isINF;
-wire A_isNaN;
-wire A_isZ;
-wire [EWIDTH - 1:0] B_EXP;
-wire [SIGWIDTH:0] B_SIG;
-wire B_SIGN;
-wire B_isINF;
-wire B_isNaN;
-wire B_isZ;
-wire [EWIDTH - 1:0] EXP_addout;
-wire [EWIDTH - 1:0] EXP_in;
-wire [EWIDTH - 1:0] EXP_out;
-wire [EWIDTH - 1:0] EXP_out_norm;
-wire [EWIDTH - 1:0] EXP_out_round;
-wire SIGN_out;
-wire [2 * (SIGWIDTH + 1) - 1:0] SIG_in;
+logic [EWIDTH - 1:0] A_EXP;
+logic [SIGWIDTH:0] A_SIG;
+logic A_SIGN;
+logic A_isINF;
+logic A_isNaN;
+logic A_isZ;
+logic [EWIDTH - 1:0] B_EXP;
+logic [SIGWIDTH:0] B_SIG;
+logic B_SIGN;
+logic B_isINF;
+logic B_isNaN;
+logic B_isZ;
+logic [EWIDTH - 1:0] EXP_addout;
+logic [EWIDTH - 1:0] EXP_in;
+logic [EWIDTH - 1:0] EXP_out;
+logic [EWIDTH - 1:0] EXP_out_norm;
+logic [EWIDTH - 1:0] EXP_out_round;
+logic SIGN_out;
+logic [2 * (SIGWIDTH + 1) - 1:0] SIG_in;
 logic SIG_isZ;
-wire [SIGWIDTH:0] SIG_out;
-wire [SIGWIDTH + 3:0] SIG_out_norm;
-wire [SIGWIDTH:0] SIG_out_round;
+logic [SIGWIDTH:0] SIG_out;
+logic [SIGWIDTH + 3:0] SIG_out_norm;
+logic [SIGWIDTH:0] SIG_out_round;
 logic isINF;
 logic isINF_tab;
 logic isNaN;
-wire isZ;
+logic isZ;
 logic isZ_tab;
-wire [2 * (SIGWIDTH + 1) - 1:0] prod;
+logic [2 * (SIGWIDTH + 1) - 1:0] prod;
 
-wire [2 * (SIGWIDTH + 1) - 1:0] dtemp;
+logic [2 * (SIGWIDTH + 1) - 1:0] dtemp;
 
 
   assign SIG_in = prod[2 * (SIGWIDTH + 1) - 1:0];

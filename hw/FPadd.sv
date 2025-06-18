@@ -16,19 +16,19 @@ initial begin
 end
 `endif
 
-wire X_sign;
-wire Y_sign;
+logic X_sign;
+logic Y_sign;
 logic sum_sign;
-wire [EWIDTH - 1:0] X_exp;
-wire [EWIDTH - 1:0] Y_exp;
-wire [EWIDTH - 1:0] sum_exp, norm_exp, round_exp;
-wire [SIGWIDTH:0] X_sig, Y_sig;
-wire [2 * SIGWIDTH:0] X_aligned_sig, Y_aligned_sig;
+logic [EWIDTH - 1:0] X_exp;
+logic [EWIDTH - 1:0] Y_exp;
+logic [EWIDTH - 1:0] sum_exp, norm_exp, round_exp;
+logic [SIGWIDTH:0] X_sig, Y_sig;
+logic [2 * SIGWIDTH:0] X_aligned_sig, Y_aligned_sig;
 // verilator lint_off UNUSEDSIGNAL
 logic [2 * SIGWIDTH + 1:0] sum_significand;
 // verilator lint_on UNUSEDSIGNAL
 
-wire [EWIDTH:0] expdiff, abs_diff;
+logic [EWIDTH:0] expdiff, abs_diff;
 logic [2 * SIGWIDTH + 1:0] sum_significand_temp;
 logic [SIGWIDTH + 3:0] norm_significand;
 // verilator lint_off UNUSEDSIGNAL

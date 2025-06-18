@@ -17,7 +17,7 @@ genvar i, j;
 
 localparam WWIDTH = EWIDTH + SIGWIDTH + 1;
 
-wire [M - 1 : 0][N - 1 : 0][WWIDTH - 1 : 0] mult_intermediates;
+logic [M - 1 : 0][N - 1 : 0][WWIDTH - 1 : 0] mult_intermediates;
 
 generate
 

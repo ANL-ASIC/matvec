@@ -4,7 +4,7 @@
 
 // vhd2vl is Free (libre) Software:
 //   Copyright (C) 2001-2023 Vincenzo Liguori - Ocean Logic Pty Ltd
-//     http://www.ocean-reg.com
+//     http://www.ocean-logic.com
 //   Modifications Copyright (C) 2006 Mark Gonzales - PMC Sierra Inc
 //   Modifications (C) 2010 Shankar Giri
 //   Modifications Copyright (C) 2002-2023 Larry Doolittle
@@ -40,7 +40,7 @@ module FPnormalizeMul #(
 
 localparam SIGWIDTH_EXT = 2 * (SIGWIDTH + 1);
 
-wire [EWIDTH - 1:0] shift_factor;
+logic [EWIDTH - 1:0] shift_factor;
 // verilator lint_off UNUSEDSIGNAL
 logic [SIGWIDTH_EXT - 1:0] SIG_intermediate;
 // verilator lint_on UNUSEDSIGNAL

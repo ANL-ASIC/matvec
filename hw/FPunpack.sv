@@ -4,7 +4,7 @@
 
 // vhd2vl is Free (libre) Software:
 //   Copyright (C) 2001-2023 Vincenzo Liguori - Ocean Logic Pty Ltd
-//     http://www.ocean-reg.com
+//     http://www.ocean-logic.com
 //   Modifications Copyright (C) 2006 Mark Gonzales - PMC Sierra Inc
 //   Modifications (C) 2010 Shankar Giri
 //   Modifications Copyright (C) 2002-2023 Larry Doolittle
@@ -33,20 +33,20 @@
 module FPunpack #(
     parameter EWIDTH = 8,
     parameter SIGWIDTH = 23) (
-    input wire [EWIDTH + SIGWIDTH:0] FP,
-    output wire [SIGWIDTH:0] SIG,
-    output wire [EWIDTH - 1:0] EXP,
-    output wire SIGN,
-    output wire isNaN,
-    output wire isINF,
-    output wire isZ
+    input logic [EWIDTH + SIGWIDTH:0] FP,
+    output logic [SIGWIDTH:0] SIG,
+    output logic [EWIDTH - 1:0] EXP,
+    output logic SIGN,
+    output logic isNaN,
+    output logic isINF,
+    output logic isZ
     );
 
 localparam WIDTH = 1 + EWIDTH + SIGWIDTH;
 
-wire [EWIDTH - 1:0] exp_int;
-wire [SIGWIDTH - 1:0] sig_int;
-wire expZ; wire expFF; wire sigZ;
+logic [EWIDTH - 1:0] exp_int;
+logic [SIGWIDTH - 1:0] sig_int;
+logic expZ; logic expFF; logic sigZ;
 
 assign exp_int = FP[WIDTH - 2:SIGWIDTH];
 assign sig_int = FP[SIGWIDTH - 1:0];

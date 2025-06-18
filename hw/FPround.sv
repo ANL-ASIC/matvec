@@ -4,7 +4,7 @@
 
 // vhd2vl is Free (libre) Software:
 //   Copyright (C) 2001-2023 Vincenzo Liguori - Ocean Logic Pty Ltd
-//     http://www.ocean-reg.com
+//     http://www.ocean-logic.com
 //   Modifications Copyright (C) 2006 Mark Gonzales - PMC Sierra Inc
 //   Modifications (C) 2010 Shankar Giri
 //   Modifications Copyright (C) 2002-2023 Larry Doolittle
@@ -34,11 +34,11 @@ module FPround #(
     parameter EWIDTH = 8,
     parameter SIGWIDTH = 23) (
     // verilator lint_off UNUSEDSIGNAL
-    input wire [SIGWIDTH + 3:0] SIG_in,
+    input logic [SIGWIDTH + 3:0] SIG_in,
     // verilator lint_on UNUSEDSIGNAL
-    input wire [EWIDTH - 1:0] EXP_in,
+    input logic [EWIDTH - 1:0] EXP_in,
     output [SIGWIDTH:0] SIG_out,
-    output wire [EWIDTH - 1:0] EXP_out
+    output logic [EWIDTH - 1:0] EXP_out
 );
 
 logic [SIGWIDTH + 1:0] SIG_intermediate;

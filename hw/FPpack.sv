@@ -4,7 +4,7 @@
 
 // vhd2vl is Free (libre) Software:
 //   Copyright (C) 2001-2023 Vincenzo Liguori - Ocean Logic Pty Ltd
-//     http://www.ocean-reg.com
+//     http://www.ocean-logic.com
 //   Modifications Copyright (C) 2006 Mark Gonzales - PMC Sierra Inc
 //   Modifications (C) 2010 Shankar Giri
 //   Modifications Copyright (C) 2002-2023 Larry Doolittle
@@ -33,14 +33,14 @@
 module FPpack #(
     parameter EWIDTH = 8,
     parameter SIGWIDTH = 23) (
-    input wire SIGN,
-    input wire [EWIDTH - 1:0] EXP,
+    input logic SIGN,
+    input logic [EWIDTH - 1:0] EXP,
     // verilator lint_off UNUSEDSIGNAL
-    input wire [SIGWIDTH:0] SIG,
+    input logic [SIGWIDTH:0] SIG,
     // verilator lint_on UNUSEDSIGNAL
-    input wire isNaN,
-    input wire isINF,
-    input wire isZ,
+    input logic isNaN,
+    input logic isINF,
+    input logic isZ,
     output logic [EWIDTH + SIGWIDTH:0] FP
     );
 

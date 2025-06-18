@@ -18,12 +18,12 @@ end
 localparam [EWIDTH - 1:0] BIAS = 2 ** (EWIDTH - 1) - 1;
 
 // verilator lint_off UNUSEDSIGNAL
-wire [SIGWIDTH - 1:0] sig;
+logic [SIGWIDTH - 1:0] sig;
 // verilator lint_on UNUSEDSIGNAL
-wire [EWIDTH - 1:0] exp;
-wire sign;
-wire [EWIDTH:0] shift_factor;
-wire [IWIDTH - 1:0] shifted;
+logic [EWIDTH - 1:0] exp;
+logic sign;
+logic [EWIDTH:0] shift_factor;
+logic [IWIDTH - 1:0] shifted;
 logic [EWIDTH:0] leading_bit_pos;
 int i;
 

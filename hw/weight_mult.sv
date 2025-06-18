@@ -2,9 +2,9 @@ module weight_mult #(
     parameter IWIDTH = 12,
     parameter EWIDTH = 8,
     parameter SIGWIDTH = 23) (
-    input wire [IWIDTH - 1:0] a,
-    input wire [EWIDTH + SIGWIDTH:0] b,
-    output wire [EWIDTH + SIGWIDTH:0] c
+    input logic [IWIDTH - 1:0] a,
+    input logic [EWIDTH + SIGWIDTH:0] b,
+    output logic [EWIDTH + SIGWIDTH:0] c
 );
 
 // localparam OWIDTH = IWIDTH + WWIDTH;
