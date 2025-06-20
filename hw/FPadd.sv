@@ -16,21 +16,22 @@ initial begin
 end
 `endif
 
-logic X_sign;
-logic Y_sign;
+logic X_sign, Y_sign;
+logic bigger_sign, smaller_sign;
 logic sum_sign;
-logic [EWIDTH - 1:0] X_exp;
-logic [EWIDTH - 1:0] Y_exp;
+logic [EWIDTH - 1:0] X_exp, Y_exp;
+logic [EWIDTH - 1:0] bigger_exp;
 logic [EWIDTH - 1:0] sum_exp, norm_exp, round_exp;
 logic [SIGWIDTH:0] X_sig, Y_sig;
-logic [2 * SIGWIDTH:0] X_aligned_sig, Y_aligned_sig;
+logic [SIGWIDTH:0] smaller_sig;
+logic [SIGWIDTH + 4:0] bigger_sig, smaller_aligned_sig;
+logic sticky_bit;
 // verilator lint_off UNUSEDSIGNAL
-logic [2 * SIGWIDTH + 1:0] sum_significand;
+logic [SIGWIDTH + 4:0] sum_significand;
 // verilator lint_on UNUSEDSIGNAL
 
 logic [EWIDTH:0] expdiff, abs_diff;
-logic [2 * SIGWIDTH + 1:0] sum_significand_temp;
-logic [SIGWIDTH + 2:0] norm_significand;
+logic [SIGWIDTH + 3:0] norm_significand;
 // verilator lint_off UNUSEDSIGNAL
 logic [SIGWIDTH:0] round_significand;
 // verilator lint_on UNUSEDSIGNAL
@@ -46,36 +47,34 @@ assign Y_sign = Y[WIDTH - 1];
 assign Y_exp = Y[WIDTH - 2:SIGWIDTH];
 assign Y_sig = {(|Y_exp), Y[SIGWIDTH - 1:0]};
 
-assign sum_exp = expdiff[EWIDTH] ? Y_exp : X_exp;			//Greater exp taken
-
-assign X_aligned_sig = expdiff[EWIDTH] ? {X_sig, (SIGWIDTH)'(0)} >> abs_diff : {X_sig, (SIGWIDTH)'(0)};	              //X sig shifts if expdiff[EWIDTH]
-assign Y_aligned_sig = expdiff[EWIDTH] ? {Y_sig, (SIGWIDTH)'(0)}             : {Y_sig, (SIGWIDTH)'(0)} >> abs_diff;   //Y sig shifts if !expdiff[EWIDTH]
-
 assign expdiff = X_exp - Y_exp;
-assign abs_diff = {1'b0, (expdiff[EWIDTH] ? ~(expdiff[EWIDTH - 1:0]) + 1'b1 : expdiff[EWIDTH - 1:0])};	//Absolute difference
+assign abs_diff = {1'b0, (expdiff[EWIDTH] == 1'b1 ? ~(expdiff[EWIDTH - 1:0]) + 1'b1 : expdiff[EWIDTH - 1:0])};	//Absolute difference
 
 always_comb begin
-    sum_sign = X_sign & Y_sign;
-    sum_significand_temp = 0;
-    if (!(X_sign ^ Y_sign)) begin
-        // simply add together the signficands if operands are same sign
-        sum_significand = {1'b0, X_aligned_sig} + {1'b0, Y_aligned_sig};
+    if (expdiff[EWIDTH] == 1'b1 || (X_exp == Y_exp && Y_sig > X_sig)) begin
+        bigger_sign = Y_sign;
+        bigger_exp = Y_exp;
+        bigger_sig = {1'b0, Y_sig, 3'd0};
+        smaller_sign = X_sign;
+        smaller_sig = X_sig;
     end else begin
-        // determine operand order depending on which operand is negative
-        if (X_sign)
-            sum_significand_temp = Y_aligned_sig - X_aligned_sig;
-        else
-            sum_significand_temp = X_aligned_sig - Y_aligned_sig;
-
-        // check for underflow and convert back to unsigned
-        if (sum_significand_temp[2 * SIGWIDTH + 1] == 1'b1) begin
-            sum_significand = ~sum_significand_temp + 1;
-            sum_sign = 1'b1;
-        end else begin
-            sum_significand = sum_significand_temp;
-        end
+        bigger_sign = X_sign;
+        bigger_exp = X_exp;
+        bigger_sig = {1'b0, X_sig, 3'd0};
+        smaller_sign = Y_sign;
+        smaller_sig = Y_sig;
     end
 end
+
+assign sticky_bit = |(smaller_sig << (SIGWIDTH + 2 < abs_diff ? '0 : (SIGWIDTH + 2 - abs_diff)));
+assign smaller_aligned_sig = {{1'b0, smaller_sig, 2'd0} >> abs_diff, sticky_bit};
+
+assign sum_sign = bigger_sign;
+assign sum_exp = bigger_exp;
+
+assign sum_significand = !(bigger_sign ^ smaller_sign) ?
+    bigger_sig + smaller_aligned_sig :
+    bigger_sig - smaller_aligned_sig;
 
 FPnormalizeAdd #(
     .SIGWIDTH(SIGWIDTH),

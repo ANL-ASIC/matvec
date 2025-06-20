@@ -20,7 +20,7 @@ logic [SIGWIDTH:0] b_sig;
 // verilator lint_off UNUSEDSIGNAL
 logic [SIGWIDTH:0] c_sig;
 logic [PRODWIDTH - 1:0] prod_shifted;
-logic [SIGWIDTH + 2:0] c_sig_unrounded;
+logic [SIGWIDTH + 3:0] c_sig_unrounded;
 // verilator lint_onn UNUSEDSIGNAL
 
 logic [SHIFTWIDTH - 1:0] leading_bit_index;
@@ -47,7 +47,7 @@ end
 assign c_sign = b_sign;
 assign c_exp_unrounded = b_exp + ((EWIDTH)'(leading_bit_index) - (EWIDTH)'(SIGWIDTH));
 assign prod_shifted = product << (PRODWIDTH - 1 - leading_bit_index);
-assign c_sig_unrounded = {prod_shifted[PRODWIDTH - 1:PRODWIDTH - (SIGWIDTH + 1) - 1], |prod_shifted[PRODWIDTH - (SIGWIDTH + 2) - 1:0]};
+assign c_sig_unrounded = {prod_shifted[PRODWIDTH - 1:PRODWIDTH - (SIGWIDTH + 1) - 2], |prod_shifted[PRODWIDTH - (SIGWIDTH + 1) - 3:0]};
 
 FPround #(
     .SIGWIDTH(SIGWIDTH),
