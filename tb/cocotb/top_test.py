@@ -47,6 +47,10 @@ class SimStatus:
     do_sim = True
 
 
+def get_float_np_type(dut):
+    return np.float16 if (dut.EWIDTH.value + dut.SIGWIDTH.value + 1) <= 16 else np.float32
+
+
 async def generate_clock(dut, sim_status):
     while True:
         dut.clk.value = 0
@@ -156,6 +160,16 @@ def truncate_float(val, exp_bits, sig_bits):
     return bit_string_to_float(float_to_bit_string(val, exp_bits, sig_bits), exp_bits)
 
 
+def signal_to_np_array_2D(signal, len_D1, len_D2, width):
+    arr = []
+    for i in range(len_D1):
+        arr.append([])
+        for j in range(len_D2):
+            start = i * len_D2 * width + (len_D2 - j - 1) * width
+            arr[-1].append(signal[start:start + width])
+    return arr
+
+
 def gen_random_frame(dut):
     rng = np.random.default_rng()
     return rng.uniform(low=0, high=(2 ** (dut.pixel_data_width.value - 1) - 1), size=(dut.number_of_rows_per_frame.value * dut.number_of_columns_per_frame.value)).astype(np.uint16)
@@ -176,7 +190,7 @@ def gen_random_weights(dut):
 
 
 def gen_ascending_weights(dut):
-    dtype = np.float16 if (dut.EWIDTH.value + dut.SIGWIDTH.value + 1) <= 16 else np.float32
+    dtype = get_float_np_type(dut)
     weights = np.zeros((dut.K.value, dut.number_of_rows_per_frame.value * dut.number_of_columns_per_frame.value), dtype=dtype)
     for i in range(dut.K.value):
         for j in range(dut.number_of_columns_per_frame.value  * dut.number_of_rows_per_frame.value):
@@ -207,7 +221,6 @@ async def write_weights(dut, weights):
 
 async def write_frame(dut, frame, weights, always_valid = False, is_pipelined = False):
     # set full frame
-    tasks = []
     i = 0
     while i < dut.number_of_rows_per_frame.value:
         set_dv_high = always_valid or random.randint(0, 1) == 1
@@ -220,8 +233,11 @@ async def write_frame(dut, frame, weights, always_valid = False, is_pipelined = 
             for pixel in np.flip(row):
                 binstr += format(pixel, '0' + str(dut.pixel_data_width.value) + 'b')
             dut.pixel_data.value = BinaryValue(binstr)
+            await Timer(0.5, units="ns")
             weights_row = weights[0:,dut.number_of_columns_per_frame.value * i:dut.number_of_columns_per_frame.value * (i + 1)]
             i += 1
+
+            await cocotb.start(validate_tree(dut))
 
             if i == dut.number_of_rows_per_frame and is_pipelined:
                 dut.SRO.value = 1
@@ -233,24 +249,18 @@ async def write_frame(dut, frame, weights, always_valid = False, is_pipelined = 
         dut.SRO.value = 0
 
         if set_dv_high:
-            validate_multiplies(dut, row, weights_row)
+            await cocotb.start(validate_multiplies(dut, row, weights_row))
 
     dut.pixel_data.value = BinaryValue(format(0, '0' + str(dut.number_of_columns_per_frame.value * dut.pixel_data_width.value) + 'b'))
     dut.dv.value = 0
 
 
-def validate_multiplies(dut, row, weights):
-    dtype = np.float16 if (dut.EWIDTH.value + dut.SIGWIDTH.value + 1) <= 16 else np.float32
+async def validate_multiplies(dut, row, weights):
+    dtype = get_float_np_type(dut)
     row = row.astype(dtype)
     weights = weights.astype(dtype)
     width = dut.EWIDTH.value + dut.SIGWIDTH.value + 1
-    intermediates_binstr = dut.mac.mult_intermediates.value.binstr
-    result_binstrs = []
-    for i in range(dut.K.value):
-        result_binstrs.append([])
-        for j in range(dut.number_of_columns_per_frame.value):
-            start = i * dut.number_of_columns_per_frame.value * width + (dut.number_of_columns_per_frame.value - j - 1) * width
-            result_binstrs[-1].append(intermediates_binstr[start:start + width])
+    result_binstrs = signal_to_np_array_2D(dut.mac.mult_intermediates.value.binstr, dut.K.value, dut.number_of_columns_per_frame.value, width)
 
     for i in range(dut.K.value):
         expected_vals = row * weights[i]
@@ -259,12 +269,40 @@ def validate_multiplies(dut, row, weights):
             result = bit_string_to_float(result_binstr, dut.EWIDTH.value)
             expected = expected_vals[j]
             expected_binstr = float_to_bit_string(expected, dut.EWIDTH.value, dut.SIGWIDTH.value)
-            # print("{}, {}: result={} ({}) expected={} ({})".format(i, j, result, result_binstr, expected, expected_binstr))
-            assert abs(expected - result) / expected < .001
+            if expected != result:
+                print("{}, {}: {} * {}; result={} ({}) expected={} ({})".format(i, j, int(row[j]), weights[i][j], result, result_binstr, expected, expected_binstr))
+            assert expected == result
+
+
+async def validate_tree(dut):
+    dtype = get_float_np_type(dut)
+    num_operands = dut.number_of_columns_per_frame.value
+    level = int(math.log2(num_operands)) - 1
+    await FallingEdge(dut.clk)
+    while num_operands > 1:
+        for i in range(dut.K.value):
+            for j in range(int(num_operands / 2)):
+                signal_id_base = 'accumulators[{}].acc.acc_lvls[{}].acc_rows[{}].'.format(i, level, j) + ('first_lvl' if level == int(math.log2(dut.number_of_columns_per_frame.value)) - 1 else 'lvls') + '.fpadd'
+                X = bit_string_to_float(dut.mac._id(signal_id_base + '.X', extended=False).value.binstr, dut.EWIDTH.value)
+                Y = bit_string_to_float(dut.mac._id(signal_id_base + '.Y', extended=False).value.binstr, dut.EWIDTH.value)
+
+                result_binstr = dut.mac._id(signal_id_base + '.sum', extended=False).value.binstr
+                result = bit_string_to_float(result_binstr, dut.EWIDTH.value)
+
+                expected = np.array([X], dtype=dtype) + np.array([Y], dtype=dtype)
+                expected = expected[0]
+                expected_binstr = float_to_bit_string(expected, dut.EWIDTH.value, dut.SIGWIDTH.value)
+
+                if expected != result:
+                    print("{},{},{}: {} + {}; result={} ({}) expected={} ({})".format(i, level, j, X, Y, result, result_binstr, expected, expected_binstr))
+                assert expected == result
+        num_operands /= 2
+        level -= 1
+        await FallingEdge(dut.clk)
 
 
 def calc_matvec(dut, frame, weights):
-    dtype = np.float16 if (dut.EWIDTH.value + dut.SIGWIDTH.value + 1) <= 16 else np.float32
+    dtype = get_float_np_type(dut)
     frame = frame.astype(dtype)
     weights = weights.astype(dtype)
     expected_vals = np.zeros(dut.K.value, dtype=dtype)
@@ -296,8 +334,9 @@ def validate_output(dut, expected_vals):
         result = bit_string_to_float(result_binstr, dut.EWIDTH.value)
         expected = expected_vals[i]
         expected_binstr = float_to_bit_string(expected, dut.EWIDTH.value, dut.SIGWIDTH.value)
-        print("{}: result={} ({}) expected={} ({})".format(i, result, result_binstr, expected, expected_binstr))
-        assert abs(expected - result) / expected < .001
+        if expected != result:
+            print("{}: result={} ({}) expected={} ({})".format(i, result, result_binstr, expected, expected_binstr))
+        assert expected == result
         err += abs(result - expected_vals[i])
     err /= dut.K.value
 
