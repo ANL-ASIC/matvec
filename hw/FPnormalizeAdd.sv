@@ -33,13 +33,14 @@
 module FPnormalizeAdd #(
     parameter EWIDTH = 8,
     parameter SIGWIDTH = 23) (
-    input logic [SIGWIDTH + 4:0] SIG_in,
+    input logic [2 * SIGWIDTH + 1:0] SIG_in,
     input logic [EWIDTH - 1:0] EXP_in,
-    output [SIGWIDTH + 3:0] SIG_out,
+    output [SIGWIDTH + 2:0] SIG_out,
     output logic [EWIDTH - 1:0] EXP_out);
 
 // verilator lint_off UNUSEDSIGNAL
-logic [SIGWIDTH + 4:0] SIG_intermediate;
+logic [2 * SIGWIDTH + 1:0] SIG_intermediate;
+logic [SIGWIDTH + 2:0] SIG_truncated;
 // verilator lint_on UNUSEDSIGNAL
 
 logic [EWIDTH - 1:0] leading_bit_pos;
@@ -47,24 +48,25 @@ int i;
 
 always_comb begin
     leading_bit_pos = 0;
-    for (i = 0; i <= SIGWIDTH + 4; i = i + 1) begin
+    for (i = 0; i <= 2 * SIGWIDTH + 1; i++) begin
         if (SIG_in[i] == 1'b1)
-        leading_bit_pos = (EWIDTH)'(i);
+            leading_bit_pos = (EWIDTH)'(i);
     end
 
-    if (leading_bit_pos < SIGWIDTH + 3)
-        EXP_out = EXP_in - (SIGWIDTH + 3 - leading_bit_pos);
+    if (leading_bit_pos < 2 * SIGWIDTH)
+        EXP_out = EXP_in - (2 * SIGWIDTH - leading_bit_pos);
     else begin
-        if (SIG_in[SIGWIDTH + 4] == 1'b1)
+        if (SIG_in[2 * SIGWIDTH + 1] == 1'b1)
             EXP_out = EXP_in + 1;
         else
             EXP_out = EXP_in;
     end
 end
 
-assign SIG_intermediate = SIG_in << (SIGWIDTH + 4 - leading_bit_pos);
+assign SIG_intermediate = SIG_in << (EWIDTH'(2 * SIGWIDTH + 1) - leading_bit_pos);
+assign SIG_truncated = {SIG_intermediate[2 * SIGWIDTH + 1:SIGWIDTH], |SIG_intermediate[SIGWIDTH - 1:0]};
 
 
-assign SIG_out = SIG_intermediate[SIGWIDTH + 4:1];
+assign SIG_out = SIG_truncated;
 
 endmodule
