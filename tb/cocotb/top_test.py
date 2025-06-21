@@ -109,10 +109,27 @@ def float_to_bit_string(val, exp_bits, sig_bits):
     exp += 2 ** (exp_bits - 1) - 1
 
     # find integer with same bitstring as signficand
-    sig = sig * 2 ** ((sig_bits + 1) - int(math.log2(sig))) # sig_bits + 1 because of the hidden bit
-    sig = int(sig)
+    sig_64 = int(sig * (2 ** (52)))  # Get the significand in 64-bit representation (python native)
 
-    result = '{}{}{}'.format('0' if val >= 0 else '1', format(exp, '0' + str(exp_bits) + 'b')[:exp_bits], format(sig, '0' + str(sig_bits) + 'b')[1:sig_bits + 1])
+    if sig_bits < 52:
+        sig_64_sticky = sig_64 % (1 << (52 - sig_bits - 1)) != 0  # Get the sticky bits
+        sig_64_guard = (sig_64 >> (52 - sig_bits - 1)) & 1  # Get the guard bit
+        sig_64_odd = (sig_64 >> (52 - sig_bits)) & 1  # Get the odd bit
+
+        sig = (sig_64 >> (52 - sig_bits))  # Get the significand in the correct bit representation
+        if (sig_64_sticky and sig_64_guard) or (sig_64_guard and sig_64_odd):
+            # round up if necessary
+            sig += 1
+
+        if sig >= (1 << (sig_bits + 1)): # Rounding caused overflow
+            sig //= 2  # If the significand is larger than 1, we need to shift it right by one bit
+            exp += 1  # and increase the exponent by one
+    else:
+        sig = sig_64
+
+    sig &= (1 << sig_bits) - 1  # Mask the significand to the correct number of bits
+
+    result = f"{0 if val >= 0 else 1:1b}{exp:0{exp_bits}b}{sig:0{sig_bits}b}"
 
     return result
 
