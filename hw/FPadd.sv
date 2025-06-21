@@ -66,7 +66,7 @@ always_comb begin
     end
 end
 
-assign sticky_bit = |(smaller_sig << (SIGWIDTH + 2 < abs_diff ? '0 : (SIGWIDTH + 2 - abs_diff)));
+assign sticky_bit = |(smaller_sig << (SIGWIDTH + 3 < abs_diff ? '0 : (SIGWIDTH + 3 - abs_diff)));
 assign smaller_aligned_sig = {{1'b0, smaller_sig, 2'd0} >> abs_diff, sticky_bit};
 
 assign sum_sign = bigger_sign;
