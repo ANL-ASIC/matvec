@@ -255,8 +255,6 @@ async def write_frame(dut, frame, weights, always_valid = False, is_pipelined = 
             weights_row = weights[0:,dut.number_of_columns_per_frame.value * i:dut.number_of_columns_per_frame.value * (i + 1)]
             i += 1
 
-            await cocotb.start(validate_tree(dut))
-
             if i == dut.number_of_rows_per_frame and is_pipelined:
                 dut.SRO.value = 1
         else:
@@ -268,6 +266,7 @@ async def write_frame(dut, frame, weights, always_valid = False, is_pipelined = 
 
         if set_dv_high:
             await cocotb.start(validate_multiplies(dut, row, weights_row))
+            await cocotb.start(validate_tree(dut))
 
     dut.pixel_data.value = BinaryValue(format(0, '0' + str(dut.number_of_columns_per_frame.value * dut.pixel_data_width.value) + 'b'))
     dut.dv.value = 0
@@ -362,7 +361,7 @@ def validate_output(dut, expected_vals):
 
 
 async def delayed_validation(dut, expected_vals):
-    for i in range(math.ceil(math.log2(dut.number_of_columns_per_frame.value)) + 1):
+    for i in range(math.ceil(math.log2(dut.number_of_columns_per_frame.value)) + 2):
         await RisingEdge(dut.clk)
 
     return validate_output(dut, expected_vals)
