@@ -80,7 +80,7 @@ def init(dut):
 
 
 def get_exp_and_sig(val):
-    if val == 0.0:
+    if abs(val) == 0.0:
         return (0, 0)
 
     sig = abs(val)
@@ -95,12 +95,19 @@ def get_exp_and_sig(val):
     return (exp, sig)
 
 
-def float_to_bit_string(val, exp_bits, sig_bits):
+def float_to_bit_string(val, exp_bits, sig_bits, zero_subnormals=False):
     result = ''
     if val == 0.0:
         return format(0, '0' + str(exp_bits + sig_bits + 1) + 'b')
 
     (exp, sig) = get_exp_and_sig(val)
+
+    # Set subnormals to zero
+    if zero_subnormals and -(2 ** (exp_bits - 1)) - sig_bits < exp <= -(2 ** (exp_bits - 1)):
+        exp = 0
+        sig = 0
+
+    if exp == 0 and sig == 0: return '0' * (exp_bits + sig_bits + 1)
 
     # make sure this number is representable
     assert sig > (2 ** (-sig_bits))
@@ -129,6 +136,8 @@ def float_to_bit_string(val, exp_bits, sig_bits):
         sig = sig_64
 
     sig &= (1 << sig_bits) - 1  # Mask the significand to the correct number of bits
+
+    if zero_subnormals and exp == 0: sig, val = 0, 0
 
     result = f"{0 if val >= 0 else 1:1b}{exp:0{exp_bits}b}{sig:0{sig_bits}b}"
 
@@ -564,6 +573,59 @@ async def invalid_signal_test(dut):
     assert(dut.fsm.addr_reg.value == 0)
 
     sim_status.do_sim = False
+
+
+@cocotb.test()
+async def adder_unit_test(dut):
+    ebits, mbits = dut.EWIDTH.value, dut.SIGWIDTH.value
+    float_max_val = bit_string_to_float('0' + '1' * (ebits + mbits), ebits)
+
+    def format_binstr(value):
+        """Format a binary string representing a floating point number into a human-friendly format with a delimiter between the sign, significand, and exponent."""
+        return f"{value[-(ebits+mbits+1)]}|{value[-(ebits+mbits):-mbits]}|{value[-mbits:]}"
+
+    async def check_addition(X_binstr, Y_binstr):
+        # Zero subnormal values
+        if X_binstr[-(mbits+ebits):-mbits] == '0' * ebits: X_binstr = '0' * (ebits + mbits + 1)
+        if Y_binstr[-(mbits+ebits):-mbits] == '0' * ebits: Y_binstr = '0' * (ebits + mbits + 1)
+        dut.X.value = int(X_binstr, 2)
+        dut.Y.value = int(Y_binstr, 2)
+
+        await Timer(1, units="ns")
+        
+        # print(format_binstr(X_binstr), '+', format_binstr(Y_binstr), '->', format_binstr(dut.sum.value.binstr))
+        result = bit_string_to_float(dut.sum.value.binstr, ebits)
+
+        expected = bit_string_to_float(X_binstr, ebits) + bit_string_to_float(Y_binstr, ebits)
+        expected_binstr = float_to_bit_string(expected, ebits, mbits, zero_subnormals=True)
+
+        # Compare calculated vs expected. Ignore sign for zero value, and overflow entirely
+        assert dut.sum.value.binstr == expected_binstr \
+                or (int(dut.sum.value.binstr[-(mbits+ebits):], 2) == int(expected_binstr[-(mbits+ebits):], 2) == 0) \
+                or abs(expected) > float_max_val, \
+                f'Expected {bit_string_to_float(expected_binstr, ebits)} ({format_binstr(expected_binstr)}), got {result} ({format_binstr(dut.sum.value.binstr)}) for {bit_string_to_float(X_binstr, ebits)} + {bit_string_to_float(Y_binstr, ebits)} ({format_binstr(X_binstr)}, {format_binstr(Y_binstr)})'
+
+
+    # Test all 24000-ish combinations of sign, exponent, and mantissa
+    # This is supposed to more reliably hit edge cases than random testing
+    exponent_values = [1, 2, 3, 4, 5, 2**(ebits - 1) - 1, 2**(ebits - 1), 2**(ebits - 1) + 1, 2**ebits - 3, 2**ebits - 2, 2**ebits - 1]
+    mantissa_values = [0, 1, 2, 2**(mbits - 1) - 1, 2**(mbits - 1), 2**mbits - 2, 2**mbits - 1]
+    sign_values = [0, 1]
+
+    for X_sign, X_exponent, X_mantissa in [(0,0,0)] + [(s, e, m) for s in sign_values for e in exponent_values for m in mantissa_values]:
+        for Y_sign, Y_exponent, Y_mantissa in [(0,0,0)] + [(s, e, m) for s in sign_values for e in exponent_values for m in mantissa_values]:
+            X_binstr = f"{X_sign}{X_exponent:0{ebits}b}{X_mantissa:0{mbits}b}"
+            Y_binstr = f"{Y_sign}{Y_exponent:0{ebits}b}{Y_mantissa:0{mbits}b}"
+
+            await check_addition(X_binstr, Y_binstr)
+
+    # Also test random values
+    for _ in range(10000):
+        X = random.uniform(-float_max_val, float_max_val)
+        Y = random.uniform(-float_max_val, float_max_val)
+        X_binstr = float_to_bit_string(X, ebits, mbits)
+        Y_binstr = float_to_bit_string(Y, ebits, mbits)
+        await check_addition(X_binstr, Y_binstr)
 
 
 for (val, bitstr) in int_to_fp32.items():

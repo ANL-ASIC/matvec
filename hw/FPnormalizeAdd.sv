@@ -43,18 +43,27 @@ logic [SIGWIDTH + 4:0] SIG_intermediate;
 logic [SIGWIDTH + 3:0] SIG_truncated;
 // verilator lint_on UNUSEDSIGNAL
 
-logic [EWIDTH - 1:0] leading_bit_pos;
+localparam LBPWIDTH = $clog2(SIGWIDTH+5);
+logic [LBPWIDTH - 1:0] leading_zeros;
+logic [LBPWIDTH - 1:0] leading_zeros_minus_one;
 int i;
 
 always_comb begin
-    leading_bit_pos = 0;
+    // Might want to steal someone else's more optimized code
+    leading_zeros = 0;
     for (i = 0; i <= SIGWIDTH + 4; i++) begin
-        if (SIG_in[i] == 1'b1)
-            leading_bit_pos = (EWIDTH)'(i);
+        if (SIG_in[SIGWIDTH + 4 - i] == 1'b1) begin
+            leading_zeros = (LBPWIDTH)'(i);
+            break;
+        end
     end
 
-    if (leading_bit_pos < SIGWIDTH + 3)
-        EXP_out = EXP_in - (SIGWIDTH + 3 - leading_bit_pos);
+    leading_zeros_minus_one = leading_zeros - (LBPWIDTH)'(1);
+
+    if (leading_zeros > 1)
+        if (EXP_in < {{EWIDTH-LBPWIDTH{1'b0}}, leading_zeros_minus_one}) EXP_out = 0;
+        else EXP_out = EXP_in - {{EWIDTH-LBPWIDTH{1'b0}}, leading_zeros_minus_one};
+        // EXP_out = EXP_in - {{EWIDTH-LBPWIDTH{1'b0}}, rshift};
     else begin
         if (SIG_in[SIGWIDTH + 4] == 1'b1)
             EXP_out = EXP_in + 1;
@@ -63,7 +72,7 @@ always_comb begin
     end
 end
 
-assign SIG_intermediate = SIG_in << (EWIDTH'(SIGWIDTH + 4) - leading_bit_pos);
+assign SIG_intermediate = EXP_in < {(EWIDTH-LBPWIDTH)'(0), leading_zeros} ? 0 : SIG_in << leading_zeros;
 assign SIG_truncated = {SIG_intermediate[SIGWIDTH + 4:2], |SIG_intermediate[1:0]};
 
 

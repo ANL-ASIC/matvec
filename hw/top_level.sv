@@ -13,7 +13,6 @@
 `include "FPadd.sv"
 `include "accumulator.sv"
 
-
 module top_level #(
     parameter pixel_data_width             = 12,
     parameter number_of_columns_per_frame  = 2,
@@ -98,5 +97,24 @@ module top_level #(
         .weights(read_data),
         .out(result)
     );
+
+`ifdef COCOTB_SIM
+    // FOR COCOTB TESTING ONLY
+    // -----------------------------------
+    // Single adder unit test
+    // -----------------------------------
+    (* keep = "true" *) logic [EWIDTH + SIGWIDTH:0] X;
+    (* keep = "true" *) logic [EWIDTH + SIGWIDTH:0] Y;
+    (* keep = "true" *) logic [EWIDTH + SIGWIDTH:0] sum;
+    (* keep = "true" *) logic [EWIDTH + SIGWIDTH:0] product;
+    FPadd #(
+        .EWIDTH(EWIDTH),
+        .SIGWIDTH(SIGWIDTH)
+    ) adder (
+        .X(X),
+        .Y(Y),
+        .sum(sum)
+    );
+`endif
 
 endmodule
