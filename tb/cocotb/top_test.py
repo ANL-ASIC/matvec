@@ -2,6 +2,7 @@ import cocotb, math, random
 import numpy as np
 from cocotb.triggers import Timer, RisingEdge, FallingEdge
 from cocotb.binary import BinaryValue
+import random
 
 int_to_fp32 = {
          -16: "11000001100000000000000000000000",
@@ -188,7 +189,7 @@ def signal_to_np_array_2D(signal, len_D1, len_D2, width):
 
 
 def gen_random_frame(dut):
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(random.randint(0, 2 ** 32 - 1)) # Derive random state from python's random module to make runs reproducible
     return rng.uniform(low=0, high=(2 ** (dut.pixel_data_width.value - 1) - 1), size=(dut.number_of_rows_per_frame.value * dut.number_of_columns_per_frame.value)).astype(np.uint16)
 
 
@@ -198,9 +199,9 @@ def gen_all_ones_frame(dut):
 
 
 def gen_random_weights(dut):
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(random.randint(0, 2 ** 32 - 1)) # Derive random state from python's random module to make runs reproducible
     weights = rng.uniform(low=-1.0, high=1.0, size=(dut.K.value, dut.number_of_rows_per_frame.value * dut.number_of_columns_per_frame.value))
-    weights = np.where(weights < 1.0 * 2 ** (1 - (2 ** (dut.EWIDTH.value - 1) - 1)), 2 * weights, weights)
+    weights = np.where(weights < 1.0 * 2 ** (1 - (2 ** (dut.EWIDTH.value - 1) - 1)), 0, weights)
     if (dut.EWIDTH.value + dut.SIGWIDTH.value + 1 <= 16):
         weights = weights.astype(np.float16)
 
