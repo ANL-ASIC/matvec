@@ -200,6 +200,7 @@ def gen_all_ones_frame(dut):
 def gen_random_weights(dut):
     rng = np.random.default_rng()
     weights = rng.uniform(low=-1.0, high=1.0, size=(dut.K.value, dut.number_of_rows_per_frame.value * dut.number_of_columns_per_frame.value))
+    weights = np.where(weights < 1.0 * 2 ** (1 - (2 ** (dut.EWIDTH.value - 1) - 1)), 2 * weights, weights)
     if (dut.EWIDTH.value + dut.SIGWIDTH.value + 1 <= 16):
         weights = weights.astype(np.float16)
 
