@@ -1,10 +1,11 @@
 module int_fp_mult #(
     parameter IWIDTH = 12,
-    parameter EWIDTH = 8,
+    parameter EWIDTH = 7,
+    parameter OUTPUT_EWIDTH = 8,
     parameter SIGWIDTH = 23) (
     input [IWIDTH - 1:0] a,
     input [EWIDTH + SIGWIDTH:0] b,
-    output [EWIDTH + SIGWIDTH:0] c
+    output [OUTPUT_EWIDTH + SIGWIDTH:0] c
 );
 
 localparam FWIDTH = EWIDTH + SIGWIDTH + 1;
@@ -14,7 +15,8 @@ localparam SHIFTWIDTH = $clog2(SIGWIDTH + IWIDTH + 1);
 logic is_zero;
 
 logic b_sign, c_sign;
-logic [EWIDTH - 1:0] b_exp, c_exp, c_exp_unrounded;
+logic [EWIDTH - 1:0] b_exp;
+logic [OUTPUT_EWIDTH - 1:0] c_exp, c_exp_unrounded;
 logic [SIGWIDTH:0] b_sig;
 
 // verilator lint_off UNUSEDSIGNAL
@@ -45,13 +47,13 @@ always_comb begin
 end
 
 assign c_sign = b_sign;
-assign c_exp_unrounded = b_exp + ((EWIDTH)'(leading_bit_index) - (EWIDTH)'(SIGWIDTH));
+assign c_exp_unrounded = b_exp + ((OUTPUT_EWIDTH)'(leading_bit_index) - (OUTPUT_EWIDTH)'(SIGWIDTH));
 assign prod_shifted = product << (PRODWIDTH - 1 - leading_bit_index);
 assign c_sig_unrounded = {prod_shifted[PRODWIDTH - 1:PRODWIDTH - (SIGWIDTH + 1) - 2], |prod_shifted[PRODWIDTH - (SIGWIDTH + 1) - 3:0]};
 
 FPround #(
     .SIGWIDTH(SIGWIDTH),
-    .EWIDTH(EWIDTH))
+    .EWIDTH(OUTPUT_EWIDTH))
     round(
     .EXP_in(c_exp_unrounded),
     .SIG_in(c_sig_unrounded),

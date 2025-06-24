@@ -1,6 +1,7 @@
 module matvec_wrapper #(
     parameter IWIDTH = 12,
     parameter EWIDTH = 8,
+    parameter WEIGHT_EWIDTH = 7,
     parameter SIGWIDTH = 23,
     parameter N /* verilator public */ = 16,
     parameter M /* verilator public */ = 8) (
@@ -9,7 +10,7 @@ module matvec_wrapper #(
     input dv,
     input [IWIDTH - 1 : 0] in[N - 1 : 0],
     input [WWIDTH - 1 : 0] weights[M - 1 : 0][N - 1 : 0],
-    output [WWIDTH - 1 : 0] out[M - 1 : 0]
+    output [OWIDTH - 1 : 0] out[M - 1 : 0]
 );
 
 `ifdef VERILATOR
@@ -21,12 +22,12 @@ initial begin
 end
 `endif
 
-localparam WWIDTH = EWIDTH + SIGWIDTH + 1;
-localparam OWIDTH = WWIDTH;
+localparam WWIDTH = WEIGHT_EWIDTH + SIGWIDTH + 1;
+localparam OWIDTH = WWIDTH + 1;
 
 logic [IWIDTH * N - 1 : 0] _in;
 logic [WWIDTH * M * N - 1 : 0] _weights;
-logic [WWIDTH * M - 1 : 0] _out;
+logic [OWIDTH * M - 1 : 0] _out;
 
 genvar i, j;
 
@@ -48,6 +49,7 @@ endgenerate
 matvec#(
     .IWIDTH(IWIDTH),
     .EWIDTH(EWIDTH),
+    .WEIGHT_EWIDTH(WEIGHT_EWIDTH),
     .SIGWIDTH(SIGWIDTH),
     .N(N),
     .M(M))

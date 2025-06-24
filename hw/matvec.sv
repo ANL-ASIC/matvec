@@ -1,6 +1,7 @@
 module matvec #(
     parameter IWIDTH = 12,
     parameter EWIDTH = 8,
+    parameter WEIGHT_EWIDTH = 7,
     parameter SIGWIDTH = 23,
     parameter N /* verilator public */ = 16,
     parameter M /* verilator public */ = 8
@@ -9,14 +10,14 @@ module matvec #(
     input  logic do_acc,
     input  logic dv,
     input  logic [N - 1 : 0][IWIDTH - 1 : 0] in,
-    input  logic [M - 1 : 0][N - 1 : 0][EWIDTH + SIGWIDTH : 0] weights,
+    input  logic [M - 1 : 0][N - 1 : 0][WEIGHT_EWIDTH + SIGWIDTH : 0] weights,
     output logic [M - 1 : 0][EWIDTH + SIGWIDTH : 0] out
 );
 
-    localparam WWIDTH = EWIDTH + SIGWIDTH + 1;
+    localparam WWIDTH = WEIGHT_EWIDTH + SIGWIDTH + 1;
 
-    logic [M - 1 : 0][N - 1 : 0][WWIDTH - 1 : 0] mult_intermediates;
-    logic [M - 1 : 0][N - 1 : 0][WWIDTH - 1 : 0] mult_intermediates_reg;
+    logic [M - 1 : 0][N - 1 : 0][WWIDTH:0] mult_intermediates;
+    logic [M - 1 : 0][N - 1 : 0][WWIDTH:0] mult_intermediates_reg;
     logic                                           dv_reg;
     logic                                           do_acc_reg;
 
@@ -28,7 +29,8 @@ module matvec #(
             for (j = 0; j < N; j = j + 1) begin : mult_cols
                 int_fp_mult #(
                     .IWIDTH(IWIDTH),
-                    .EWIDTH(EWIDTH),
+                    .EWIDTH(WEIGHT_EWIDTH),
+                    .OUTPUT_EWIDTH(EWIDTH),
                     .SIGWIDTH(SIGWIDTH)
                 ) mult (
                     .a(in[j]),

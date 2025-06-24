@@ -95,15 +95,17 @@ def get_exp_and_sig(val):
     return (exp, sig)
 
 
-def float_to_bit_string(val, exp_bits, sig_bits, zero_subnormals=False):
+def float_to_bit_string(val, exp_bits, sig_bits, hidden_exp_bit=False, zero_subnormals=False):
     result = ''
     if val == 0.0:
         return format(0, '0' + str(exp_bits + sig_bits + 1) + 'b')
 
+    effective_exp_bits = exp_bits + 1 if hidden_exp_bit else exp_bits
+
     (exp, sig) = get_exp_and_sig(val)
 
     # Set subnormals to zero
-    if zero_subnormals and -(2 ** (exp_bits - 1)) - sig_bits < exp <= -(2 ** (exp_bits - 1)):
+    if zero_subnormals and -(2 ** (effective_exp_bits - 1)) - sig_bits < exp <= -(2 ** (effective_exp_bits - 1)):
         exp = 0
         sig = 0
 
@@ -111,10 +113,10 @@ def float_to_bit_string(val, exp_bits, sig_bits, zero_subnormals=False):
 
     # make sure this number is representable
     assert sig > (2 ** (-sig_bits))
-    assert exp > -(2 ** (exp_bits - 1))
+    assert exp > -(2 ** (effective_exp_bits - 1))
 
     # apply bias
-    exp += 2 ** (exp_bits - 1) - 1
+    exp += 2 ** (effective_exp_bits - 1) - 1
 
     # find integer with same bitstring as signficand
     sig_64 = int(sig * (2 ** (52)))  # Get the significand in 64-bit representation (python native)
@@ -140,6 +142,10 @@ def float_to_bit_string(val, exp_bits, sig_bits, zero_subnormals=False):
     if zero_subnormals and exp == 0: sig, val = 0, 0
 
     result = f"{0 if val >= 0 else 1:1b}{exp:0{exp_bits}b}{sig:0{sig_bits}b}"
+
+    if (len(result) != (exp_bits + sig_bits + 1)):
+        print(f'Tried to write {val} with exponenet {exp} and sig {sig} using {exp_bits} exponent bits and {sig_bits} significand bits, but failed!')
+    assert(len(result) == (exp_bits + sig_bits + 1))
 
     return result
 
@@ -211,18 +217,18 @@ def gen_random_weights(dut):
     rng = np.random.default_rng(random.randint(0, 2 ** 32 - 1)) # Derive random state from python's random module to make runs reproducible
     weights = rng.uniform(low=-1.0, high=1.0, size=(dut.K.value, dut.number_of_rows_per_frame.value * dut.number_of_columns_per_frame.value))
     weights = np.where(weights < 1.0 * 2 ** (1 - (2 ** (dut.EWIDTH.value - 1) - 1)), 0, weights)
-    if (dut.EWIDTH.value + dut.SIGWIDTH.value + 1 <= 16):
+    if (dut.WEIGHT_EWIDTH.value + dut.SIGWIDTH.value + 1 <= 16):
         weights = weights.astype(np.float16)
 
     return weights
 
 
-def gen_ascending_weights(dut):
+def gen_fixed_weights(dut):
     dtype = get_float_np_type(dut)
     weights = np.zeros((dut.K.value, dut.number_of_rows_per_frame.value * dut.number_of_columns_per_frame.value), dtype=dtype)
     for i in range(dut.K.value):
         for j in range(dut.number_of_columns_per_frame.value  * dut.number_of_rows_per_frame.value):
-            weights[i][j] = dtype((j / 2 + 1) * (2**6 if j % 2 == 0 else -2**-6))
+            weights[i][j] = dtype((1 if j % 2 == 0 else -2**-6) / (j / 2 + 1))
     return weights
 
 
@@ -237,13 +243,13 @@ async def write_weights(dut, weights):
         for i in range(dut.K.value):
             for j in range(dut.number_of_columns_per_frame.value):
                 # We have to write the words in backwards order because the least significant work (index 0 of the array) is the end of the bit string
-                write_data += float_to_bit_string(weights[i][dut.number_of_columns_per_frame.value * addr + (dut.number_of_columns_per_frame.value - j - 1)], dut.EWIDTH.value, dut.SIGWIDTH.value)
+                write_data += float_to_bit_string(weights[i][dut.number_of_columns_per_frame.value * addr + (dut.number_of_columns_per_frame.value - j - 1)], dut.WEIGHT_EWIDTH.value, dut.SIGWIDTH.value, True)
         # print(f"Writing weights: {write_data}")
         dut.write_data.value = BinaryValue(write_data)
 
         await RisingEdge(dut.clk)
 
-    dut.write_data.value = BinaryValue(format(0, '0' + str(dut.number_of_columns_per_frame.value * dut.K.value * (1 + dut.EWIDTH.value + dut.SIGWIDTH.value)) + 'b'))
+    dut.write_data.value = BinaryValue(format(0, '0' + str(dut.number_of_columns_per_frame.value * dut.K.value * (1 + dut.WEIGHT_EWIDTH.value + dut.SIGWIDTH.value)) + 'b'))
     dut.write_enable.value = 0
 
 
@@ -387,7 +393,7 @@ async def fixed_input_test(dut):
     watchdog = cocotb.start_soon(invalid_signal_watchdog(dut, sim_status))
 
     frame = gen_all_ones_frame(dut)
-    weights = gen_ascending_weights(dut)
+    weights = gen_fixed_weights(dut)
 
     # calculate expected output
     expected_vals = calc_matvec(dut, frame, weights)
@@ -592,17 +598,20 @@ async def adder_unit_test(dut):
         dut.Y.value = int(Y_binstr, 2)
 
         await Timer(1, units="ns")
-        
+
         # print(format_binstr(X_binstr), '+', format_binstr(Y_binstr), '->', format_binstr(dut.sum.value.binstr))
         result = bit_string_to_float(dut.sum.value.binstr, ebits)
 
-        expected = bit_string_to_float(X_binstr, ebits) + bit_string_to_float(Y_binstr, ebits)
+        X_val = bit_string_to_float(X_binstr, ebits)
+        Y_val = bit_string_to_float(Y_binstr, ebits)
+        expected = X_val + Y_val
+        if abs(expected) > float_max_val:
+            return
         expected_binstr = float_to_bit_string(expected, ebits, mbits, zero_subnormals=True)
 
         # Compare calculated vs expected. Ignore sign for zero value, and overflow entirely
         assert dut.sum.value.binstr == expected_binstr \
-                or (int(dut.sum.value.binstr[-(mbits+ebits):], 2) == int(expected_binstr[-(mbits+ebits):], 2) == 0) \
-                or abs(expected) > float_max_val, \
+                or (int(dut.sum.value.binstr[-(mbits+ebits):], 2) == int(expected_binstr[-(mbits+ebits):], 2) == 0), \
                 f'Expected {bit_string_to_float(expected_binstr, ebits)} ({format_binstr(expected_binstr)}), got {result} ({format_binstr(dut.sum.value.binstr)}) for {bit_string_to_float(X_binstr, ebits)} + {bit_string_to_float(Y_binstr, ebits)} ({format_binstr(X_binstr)}, {format_binstr(Y_binstr)})'
 
 

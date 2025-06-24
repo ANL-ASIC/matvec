@@ -19,6 +19,7 @@ module top_level #(
     parameter number_of_rows_per_frame     = 2,
     parameter K                            = 2,
     parameter EWIDTH                       = 8,
+    parameter WEIGHT_EWIDTH                = 7,
     parameter SIGWIDTH                     = 23
 )(
     input  logic clk,
@@ -29,7 +30,7 @@ module top_level #(
     // SRAM init interface
     input  logic write_enable,
     input  logic [$clog2(number_of_rows_per_frame)-1:0] write_addr,
-    input  logic [K-1:0][number_of_columns_per_frame-1:0][EWIDTH + SIGWIDTH:0] write_data,
+    input  logic [K-1:0][number_of_columns_per_frame-1:0][WEIGHT_EWIDTH + SIGWIDTH:0] write_data,
 
     // Main input/output
     input  logic [number_of_columns_per_frame-1:0][pixel_data_width-1:0] pixel_data,
@@ -40,7 +41,7 @@ module top_level #(
     output dv_invalid
 );
 
-    localparam weight_width = EWIDTH + SIGWIDTH + 1;
+    localparam weight_width = WEIGHT_EWIDTH + SIGWIDTH + 1;
 
     // -----------------------------------
     // Address FSM
@@ -87,6 +88,7 @@ module top_level #(
         .IWIDTH(pixel_data_width),
         .SIGWIDTH(SIGWIDTH),
         .EWIDTH(EWIDTH),
+        .WEIGHT_EWIDTH(WEIGHT_EWIDTH),
         .M(K),
         .N(number_of_columns_per_frame)
     ) mac (
