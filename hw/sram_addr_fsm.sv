@@ -23,7 +23,9 @@ module sram_addr_fsm #(
 
     assign addr_out = addr_reg;
     assign do_acc = current_state == RUN && addr_reg != '0;
-
+    assign SRO_invalid <= SRO == 1'b1 && (current_state == RUN && addr_reg != SRAM_DEPTH - 1);
+    assign dv_invalid <= (dv == 1'b1 && current_state == IDLE) || (dv == 1'b0 && current_state == RUN);
+    
     // FSM State Register
     always_ff @(posedge clk or posedge reset) begin
         if (reset)
@@ -72,8 +74,7 @@ module sram_addr_fsm #(
             endcase
         end
 
-        SRO_invalid <= SRO == 1'b1 && (current_state == RUN && addr_reg != SRAM_DEPTH - 1);
-        dv_invalid <= dv == 1'b1 && current_state == IDLE;
+        
     end
 
 endmodule
