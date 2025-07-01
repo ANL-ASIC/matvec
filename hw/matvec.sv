@@ -10,14 +10,14 @@ module matvec #(
     input  logic do_acc,
     input  logic dv,
     input  logic [N - 1 : 0][IWIDTH - 1 : 0] in,
-    input  logic [M - 1 : 0][N - 1 : 0][EWIDTH + SIGWIDTH : 0] weights,
+    input  logic [M - 1 : 0][N - 1 : 0][WEIGHT_EWIDTH + SIGWIDTH : 0] weights,
     output logic [M - 1 : 0][EWIDTH + SIGWIDTH : 0] out
 );
 
-    localparam WWIDTH = EWIDTH + SIGWIDTH + 1;
+    localparam WWIDTH = WEIGHT_EWIDTH + SIGWIDTH + 1;
 
-    logic [M - 1 : 0][N - 1 : 0][WWIDTH-1:0] mult_intermediates;
-    logic [M - 1 : 0][N - 1 : 0][WWIDTH-1:0] mult_intermediates_reg;
+    logic [M - 1 : 0][N - 1 : 0][WWIDTH:0] mult_intermediates;
+    logic [M - 1 : 0][N - 1 : 0][WWIDTH:0] mult_intermediates_reg;
     logic                                           dv_reg;
     logic                                           do_acc_reg;
 
