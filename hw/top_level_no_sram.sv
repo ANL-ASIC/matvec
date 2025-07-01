@@ -17,8 +17,9 @@ module top_level_no_sram #(
     parameter pixel_data_width             = 12,
     parameter number_of_columns_per_frame  = 4,
     parameter number_of_rows_per_frame     = 168,
-    parameter K                            = 192,
+    parameter K                            = 4,
     parameter EWIDTH                       = 5,
+    parameter WEIGHT_EWIDTH                = 4,
     parameter SIGWIDTH                     = 10
 )(
     input  logic clk,
@@ -26,12 +27,8 @@ module top_level_no_sram #(
     input  logic SRO,
     input  logic dv,
 
-    // SRAM init interface
-    //input  logic write_enable,
-    //input  logic [$clog2(number_of_rows_per_frame)-1:0] write_addr,
-    //input  logic [K-1:0][number_of_columns_per_frame-1:0][EWIDTH + SIGWIDTH:0] write_data,
-
-    input logic [K-1:0][number_of_columns_per_frame-1:0][EWIDTH + SIGWIDTH:0] read_data, // packed
+    
+    input logic [K-1:0][number_of_columns_per_frame-1:0][WEIGHT_EWIDTH + SIGWIDTH :0] read_data, // packed
 
     // Main input/output
     input  logic [number_of_columns_per_frame-1:0][pixel_data_width-1:0] pixel_data,
@@ -39,7 +36,7 @@ module top_level_no_sram #(
     output logic [K - 1:0][EWIDTH + SIGWIDTH:0] result
 );
 
-    localparam weight_width = EWIDTH + SIGWIDTH + 1;
+    localparam weight_width = WEIGHT_EWIDTH + SIGWIDTH + 1;
 
     // -----------------------------------
     // Address FSM
@@ -59,31 +56,13 @@ module top_level_no_sram #(
     );
 
     // -----------------------------------
-    // SRAM signals
-    // -----------------------------------
-    //logic [K-1:0][number_of_columns_per_frame-1:0][weight_width-1:0] read_data; // packed
-
-    //SRAM #(
-    //    .K(K),
-    //    .num_col_per_frame(number_of_columns_per_frame),
-    //    .weight_width(weight_width),
-    //    .num_row_per_frame(number_of_rows_per_frame)
-    //) sram_inst (
-    //    .clk(clk),
-    //    .write_enable(write_enable),
-    //    .write_addr(write_addr),
-    //    .addr(addr_out),
-    //    .write_data(write_data),
-    //    .data_out(read_data)
-    //);
-
-    // -----------------------------------
     // Multiplier-Accumulator Block
     // -----------------------------------
     matvec #(
         .IWIDTH(pixel_data_width),
         .SIGWIDTH(SIGWIDTH),
         .EWIDTH(EWIDTH),
+        .WEIGHT_EWIDTH(WEIGHT_EWIDTH),
         .M(K),
         .N(number_of_columns_per_frame)
     ) mac (
