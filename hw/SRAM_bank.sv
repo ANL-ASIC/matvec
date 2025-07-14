@@ -11,13 +11,13 @@ module SRAM_bank #(
     input  logic write_enable,
     input  logic [$clog2(freq_factor*num_row_per_frame)-1:0] addr,
     input  logic [$clog2(freq_factor*num_row_per_frame)-1:0] write_addr,
-    input  logic [num_col_per_frame-1:0][(num_weights_per_word*weight_width)-1:0] write_data,
-    output logic [num_col_per_frame-1:0][(num_weights_per_word*weight_width)-1:0] data_out   
+    input  logic [(num_col_per_frame / (num_weights_per_word*freq_factor))-1:0][(num_weights_per_word*weight_width)-1:0] write_data,
+    output logic [(num_col_per_frame / (num_weights_per_word*freq_factor))-1:0][(num_weights_per_word*weight_width)-1:0] data_out   
 );
 
     genvar i;
     generate
-        for (i = 0; i < num_col_per_frame / (num_weights_per_word*freq_factor); i++) begin : col_gen
+        for (i = 0; i < (num_col_per_frame / (num_weights_per_word*freq_factor)); i++) begin : col_gen
             SRAM_block #(
                 .weight_width(weight_width),
                 .num_row_per_frame(num_row_per_frame)
