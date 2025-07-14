@@ -1,7 +1,7 @@
 module SRAM_block #(
     parameter weight_width = 12,
-    parameter num_row_per_frame = 168
-    parameter num_weights_per_word = 12
+    parameter num_row_per_frame = 168,
+    parameter num_weights_per_word = 12,
     parameter freq_factor = 4
 ) (
     input  logic clk,
