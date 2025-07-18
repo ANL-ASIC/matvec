@@ -1,8 +1,11 @@
 module matvec #(
     parameter IWIDTH = 12,
     parameter EWIDTH = 8,
-    parameter WEIGHT_EWIDTH = 7,
     parameter SIGWIDTH = 23,
+    parameter WEIGHT_EWIDTH = 8,
+    parameter WEIGHT_SIGWIDTH = 23,
+    parameter PROD_EWIDTH = 8,
+    parameter PROD_SIGWIDTH = 23,
     parameter N /* verilator public */ = 16,
     parameter M /* verilator public */ = 8
 ) (
@@ -10,16 +13,17 @@ module matvec #(
     input  logic do_acc,
     input  logic dv,
     input  logic [N - 1 : 0][IWIDTH - 1 : 0] in,
-    input  logic [M - 1 : 0][N - 1 : 0][WEIGHT_EWIDTH + SIGWIDTH : 0] weights,
+    input  logic [M - 1 : 0][N - 1 : 0][WEIGHT_EWIDTH + WEIGHT_SIGWIDTH : 0] weights,
     output logic [M - 1 : 0][EWIDTH + SIGWIDTH : 0] out
 );
 
     localparam WWIDTH = WEIGHT_EWIDTH + SIGWIDTH + 1;
+    localparam PWIDTH = PROD_EWIDTH + PROD_SIGWIDTH + 1;
 
-    logic [M - 1 : 0][N - 1 : 0][WWIDTH:0] mult_intermediates;
-    logic [M - 1 : 0][N - 1 : 0][WWIDTH:0] mult_intermediates_reg;
-    logic                                           dv_reg;
-    logic                                           do_acc_reg;
+    logic [M - 1 : 0][N - 1 : 0][PWIDTH - 1:0] mult_intermediates;
+    logic [M - 1 : 0][N - 1 : 0][PWIDTH - 1:0] mult_intermediates_reg;
+    logic                                  dv_reg;
+    logic                                  do_acc_reg;
 
     genvar i, j;
 
@@ -30,8 +34,9 @@ module matvec #(
                 int_fp_mult #(
                     .IWIDTH(IWIDTH),
                     .EWIDTH(WEIGHT_EWIDTH),
-                    .OUTPUT_EWIDTH(EWIDTH),
-                    .SIGWIDTH(SIGWIDTH)
+                    .SIGWIDTH(WEIGHT_SIGWIDTH),
+                    .OUTPUT_EWIDTH(PROD_EWIDTH),
+                    .OUTPUT_SIGWIDTH(PROD_SIGWIDTH)
                 ) mult (
                     .a(in[j]),
                     .b(weights[i][j]),
@@ -53,6 +58,8 @@ module matvec #(
         for (i = 0; i < M; i = i + 1) begin : accumulators
             accumulator #(
                 .N(N),
+                .INPUT_EWIDTH(PROD_EWIDTH),
+                .INPUT_SIGWIDTH(PROD_SIGWIDTH),
                 .EWIDTH(EWIDTH),
                 .SIGWIDTH(SIGWIDTH)
             ) acc (

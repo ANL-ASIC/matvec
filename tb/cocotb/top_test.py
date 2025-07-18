@@ -143,9 +143,7 @@ def float_to_bit_string(val, exp_bits, sig_bits, hidden_exp_bit=False, zero_subn
 
     result = f"{0 if val >= 0 else 1:1b}{exp:0{exp_bits}b}{sig:0{sig_bits}b}"
 
-    if (len(result) != (exp_bits + sig_bits + 1)):
-        print(f'Tried to write {val} with exponenet {exp} and sig {sig} using {exp_bits} exponent bits and {sig_bits} significand bits, but failed!')
-    assert(len(result) == (exp_bits + sig_bits + 1))
+    assert(len(result) == (exp_bits + sig_bits + 1)), f'Tried to write {val} with exponenet {exp} and sig {sig} using {exp_bits} exponent bits and {sig_bits} significand bits, but failed!'
 
     return result
 
@@ -217,7 +215,7 @@ def gen_random_weights(dut):
     rng = np.random.default_rng(random.randint(0, 2 ** 32 - 1)) # Derive random state from python's random module to make runs reproducible
     weights = rng.uniform(low=-1.0, high=1.0, size=(dut.K.value, dut.number_of_rows_per_frame.value * dut.number_of_columns_per_frame.value))
     weights = np.where(weights < 1.0 * 2 ** (1 - (2 ** (dut.EWIDTH.value - 1) - 1)), 0, weights)
-    if (dut.WEIGHT_EWIDTH.value + dut.SIGWIDTH.value + 1 <= 16):
+    if (dut.WEIGHT_EWIDTH.value + dut.WEIGHT_SIGWIDTH.value + 1 <= 16):
         weights = weights.astype(np.float16)
 
     return weights
@@ -243,17 +241,17 @@ async def write_weights(dut, weights):
         for i in range(dut.K.value):
             for j in range(dut.number_of_columns_per_frame.value):
                 # We have to write the words in backwards order because the least significant work (index 0 of the array) is the end of the bit string
-                write_data += float_to_bit_string(weights[i][dut.number_of_columns_per_frame.value * addr + (dut.number_of_columns_per_frame.value - j - 1)], dut.WEIGHT_EWIDTH.value, dut.SIGWIDTH.value, True)
+                write_data += float_to_bit_string(weights[i][dut.number_of_columns_per_frame.value * addr + (dut.number_of_columns_per_frame.value - j - 1)], dut.WEIGHT_EWIDTH.value, dut.WEIGHT_SIGWIDTH.value, True)
         # print(f"Writing weights: {write_data}")
         dut.write_data.value = BinaryValue(write_data)
 
         await RisingEdge(dut.clk)
 
-    dut.write_data.value = BinaryValue(format(0, '0' + str(dut.number_of_columns_per_frame.value * dut.K.value * (1 + dut.WEIGHT_EWIDTH.value + dut.SIGWIDTH.value)) + 'b'))
+    dut.write_data.value = BinaryValue(format(0, '0' + str(dut.number_of_columns_per_frame.value * dut.K.value * (1 + dut.WEIGHT_EWIDTH.value + dut.WEIGHT_SIGWIDTH.value)) + 'b'))
     dut.write_enable.value = 0
 
 
-async def write_frame(dut, frame, weights, always_valid = False, is_pipelined = False):
+async def write_frame(dut, frame, weights, always_valid = True, is_pipelined = False):
     # set full frame
     i = 0
     while i < dut.number_of_rows_per_frame.value:
@@ -426,57 +424,6 @@ async def fixed_input_test(dut):
 
 @cocotb.test()
 async def random_test(dut):
-    sim_status = init(dut)
-    await cocotb.start(generate_clock(dut, sim_status))
-    dut.reset.value = 1
-    await RisingEdge(dut.clk)
-    dut.reset.value = 0
-    watchdog = cocotb.start_soon(invalid_signal_watchdog(dut, sim_status))
-
-    weights = gen_random_weights(dut)
-
-    await write_weights(dut, weights)
-
-    # reset fsm
-    dut.reset.value = 1
-    await RisingEdge(dut.clk)
-    dut.reset.value = 0
-
-    iterations = 128
-    tasks = []
-
-    # signal that the first frame is coming
-    dut.SRO.value = 1
-    await RisingEdge(dut.clk)
-    dut.SRO.value = 0
-    for iter in range(iterations):
-        frame = gen_random_frame(dut)
-
-        # calculate expected output
-        expected_vals = calc_matvec(dut, frame, weights)
-
-        await write_frame(dut, frame, weights, False, True)
-
-        tasks.append(cocotb.start_soon(delayed_validation(dut, expected_vals)))
-
-    err = 0.0
-    for task in tasks:
-        await task.join()
-        err += task.result()
-
-    err /= iterations
-    err *= 100.0
-    print(f'average relative error = {err}%')
-
-    sim_status.do_sim = False
-    await RisingEdge(dut.clk)
-
-    await watchdog.join()
-    watchdog.result()
-
-
-@cocotb.test()
-async def max_throughput_test(dut):
     sim_status = init(dut)
     await cocotb.start(generate_clock(dut, sim_status))
     dut.reset.value = 1

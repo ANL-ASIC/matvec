@@ -1,20 +1,22 @@
 module accumulator#(
     parameter N = 16,
+    parameter INPUT_EWIDTH = 8,
+    parameter INPUT_SIGWIDTH = 23,
     parameter EWIDTH = 8,
     parameter SIGWIDTH = 23) (
     input clk,
     input do_acc,
     input dv,
-    input [N - 1 : 0][EWIDTH + SIGWIDTH : 0] in,
+    input [N - 1 : 0][INPUT_EWIDTH + INPUT_SIGWIDTH : 0] in,
     output [EWIDTH + SIGWIDTH : 0] out
 );
 
-localparam IWIDTH = EWIDTH + SIGWIDTH + 1;
+localparam IWIDTH = INPUT_EWIDTH + INPUT_SIGWIDTH + 1;
 localparam OWIDTH = EWIDTH + SIGWIDTH + 1;
 localparam ACCLEVELS = $clog2(N);
 
-logic [OWIDTH - 1 : 0] intermediates[ACCLEVELS : 0][2 ** ACCLEVELS - 1 : 0] /* verilator split_var */;
-logic [OWIDTH - 1 : 0] intermediates_reg[ACCLEVELS - 1 : 0][2 ** ACCLEVELS - 1 : 0] /* verilator split_var */;
+logic [IWIDTH - 1 : 0] intermediates[ACCLEVELS : 0][2 ** ACCLEVELS - 1 : 0] /* verilator split_var */;
+logic [IWIDTH - 1 : 0] intermediates_reg[ACCLEVELS - 1 : 0][2 ** ACCLEVELS - 1 : 0] /* verilator split_var */;
 
 logic [OWIDTH - 1 : 0] acc_reg;
 logic [OWIDTH - 1 : 0] acc_in;
@@ -27,11 +29,15 @@ logic dv_delayed[ACCLEVELS - 1:0];
 genvar i, l;
 
 assign acc_in = do_acc_delayed[0] == 1'b1 ? acc_reg : (OWIDTH)'(0);
-assign acc_in2 = dv_delayed[0] == 1'b1 ? intermediates_reg[0][0] : (OWIDTH)'(0);
+assign acc_in2 = dv_delayed[0] == 1'b1 ?
+    {intermediates_reg[0][0][IWIDTH - 1],
+    (EWIDTH)'(intermediates_reg[0][0][IWIDTH - 2:INPUT_SIGWIDTH]),
+    (SIGWIDTH)'(intermediates_reg[0][0][INPUT_SIGWIDTH - 1:0])} :
+    (OWIDTH)'(0);
 
 generate
 for (i = 0; i < N; i = i + 1) begin : mult_rows
-    assign intermediates[ACCLEVELS][i] = {{(OWIDTH - IWIDTH){in[i][IWIDTH - 1]}}, in[i]};
+    assign intermediates[ACCLEVELS][i] = in[i];
 end
 endgenerate
 
@@ -53,12 +59,12 @@ generate
         localparam num_sum_inputs = num_total_inputs - (num_total_inputs % 1 == 0 ? 0 : 1);
         for (i = 0; i < num_sum_inputs / 2; i = i + 1) begin : acc_rows
             if (l == ACCLEVELS - 1) begin : first_lvl
-                FPadd #(.EWIDTH(EWIDTH), .SIGWIDTH(SIGWIDTH)) fpadd(
+                FPadd #(.EWIDTH(INPUT_EWIDTH), .SIGWIDTH(INPUT_SIGWIDTH)) fpadd(
                     .X(intermediates[l + 1][2 * i][IWIDTH - 1 : 0]),
                     .Y(intermediates[l + 1][2 * i + 1][IWIDTH - 1 : 0]),
                     .sum(intermediates[l][i][IWIDTH - 1 : 0]));
             end else begin : lvls
-                FPadd #(.EWIDTH(EWIDTH), .SIGWIDTH(SIGWIDTH)) fpadd(
+                FPadd #(.EWIDTH(INPUT_EWIDTH), .SIGWIDTH(INPUT_SIGWIDTH)) fpadd(
                     .X(intermediates_reg[l + 1][2 * i][IWIDTH - 1 : 0]),
                     .Y(intermediates_reg[l + 1][2 * i + 1][IWIDTH - 1 : 0]),
                     .sum(intermediates[l][i][IWIDTH - 1 : 0]));

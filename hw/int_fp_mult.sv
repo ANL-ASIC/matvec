@@ -1,11 +1,12 @@
 module int_fp_mult #(
     parameter IWIDTH = 12,
     parameter EWIDTH = 7,
-    parameter OUTPUT_EWIDTH = 8,
-    parameter SIGWIDTH = 23) (
+    parameter SIGWIDTH = 23,
+    parameter OUTPUT_EWIDTH = 7,
+    parameter OUTPUT_SIGWIDTH = 23) (
     input [IWIDTH - 1:0] a,
     input [EWIDTH + SIGWIDTH:0] b,
-    output [OUTPUT_EWIDTH + SIGWIDTH:0] c
+    output [OUTPUT_EWIDTH + OUTPUT_SIGWIDTH:0] c
 );
 
 localparam FWIDTH = EWIDTH + SIGWIDTH + 1;
@@ -20,9 +21,9 @@ logic [OUTPUT_EWIDTH - 1:0] c_exp, c_exp_unrounded;
 logic [SIGWIDTH:0] b_sig;
 
 // verilator lint_off UNUSEDSIGNAL
-logic [SIGWIDTH:0] c_sig;
+logic [OUTPUT_SIGWIDTH:0] c_sig;
 logic [PRODWIDTH - 1:0] prod_shifted;
-logic [SIGWIDTH + 3:0] c_sig_unrounded;
+logic [OUTPUT_SIGWIDTH + 3:0] c_sig_unrounded;
 // verilator lint_onn UNUSEDSIGNAL
 
 logic [SHIFTWIDTH - 1:0] leading_bit_index;
@@ -49,10 +50,11 @@ end
 assign c_sign = b_sign;
 assign c_exp_unrounded = b_exp + ((OUTPUT_EWIDTH)'(leading_bit_index) - (OUTPUT_EWIDTH)'(SIGWIDTH));
 assign prod_shifted = product << (PRODWIDTH - 1 - leading_bit_index);
-assign c_sig_unrounded = {prod_shifted[PRODWIDTH - 1:PRODWIDTH - (SIGWIDTH + 1) - 2], |prod_shifted[PRODWIDTH - (SIGWIDTH + 1) - 3:0]};
+assign c_sig_unrounded = {prod_shifted[PRODWIDTH - 1:PRODWIDTH - (OUTPUT_SIGWIDTH + 1) - 2],
+    |prod_shifted[PRODWIDTH - (OUTPUT_SIGWIDTH + 1) - 3:0]};
 
 FPround #(
-    .SIGWIDTH(SIGWIDTH),
+    .SIGWIDTH(OUTPUT_SIGWIDTH),
     .EWIDTH(OUTPUT_EWIDTH))
     round(
     .EXP_in(c_exp_unrounded),
@@ -60,6 +62,6 @@ FPround #(
     .EXP_out(c_exp),
     .SIG_out(c_sig));
 
-assign c = is_zero == 1'b1 ? '0 : {c_sign, c_exp, c_sig[SIGWIDTH - 1:0]};
+assign c = is_zero == 1'b1 ? '0 : {c_sign, c_exp, c_sig[OUTPUT_SIGWIDTH - 1:0]};
 
 endmodule
