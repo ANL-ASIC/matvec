@@ -13,6 +13,7 @@ COMPILE_ARGS = +incdir+$(PWD)/../../hw \
 				-pvalue+top_level.SIGWIDTH=10 \
 				-pvalue+top_level.WEIGHT_EWIDTH=5 \
 				-pvalue+top_level.WEIGHT_SIGWIDTH=6 \
+				-pvalue+top_level.WEIGHT_BIAS=31 \
 				-pvalue+top_level.PROD_EWIDTH=5 \
 				-pvalue+top_level.PROD_SIGWIDTH=10
 

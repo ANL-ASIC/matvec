@@ -4,6 +4,7 @@ module matvec #(
     parameter SIGWIDTH = 23,
     parameter WEIGHT_EWIDTH = 8,
     parameter WEIGHT_SIGWIDTH = 23,
+    parameter WEIGHT_BIAS = 2 ** 7 - 1,
     parameter PROD_EWIDTH = 8,
     parameter PROD_SIGWIDTH = 23,
     parameter N /* verilator public */ = 16,
@@ -35,6 +36,7 @@ module matvec #(
                     .IWIDTH(IWIDTH),
                     .EWIDTH(WEIGHT_EWIDTH),
                     .SIGWIDTH(WEIGHT_SIGWIDTH),
+                    .BIAS(WEIGHT_BIAS),
                     .OUTPUT_EWIDTH(PROD_EWIDTH),
                     .OUTPUT_SIGWIDTH(PROD_SIGWIDTH)
                 ) mult (

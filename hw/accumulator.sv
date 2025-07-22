@@ -15,12 +15,16 @@ localparam IWIDTH = INPUT_EWIDTH + INPUT_SIGWIDTH + 1;
 localparam OWIDTH = EWIDTH + SIGWIDTH + 1;
 localparam ACCLEVELS = $clog2(N);
 
+localparam IN_BIAS = 2 ** (INPUT_EWIDTH - 1) - 1;
+localparam OUT_BIAS = 2 ** (EWIDTH - 1) - 1;
+
 logic [IWIDTH - 1 : 0] intermediates[ACCLEVELS : 0][2 ** ACCLEVELS - 1 : 0] /* verilator split_var */;
 logic [IWIDTH - 1 : 0] intermediates_reg[ACCLEVELS - 1 : 0][2 ** ACCLEVELS - 1 : 0] /* verilator split_var */;
 
 logic [OWIDTH - 1 : 0] acc_reg;
 logic [OWIDTH - 1 : 0] acc_in;
 logic [OWIDTH - 1 : 0] acc_in2;
+logic [EWIDTH - 1 : 0] acc_in2_exp;
 logic [OWIDTH - 1 : 0] acc_out;
 
 logic do_acc_delayed[ACCLEVELS - 1:0];
@@ -31,9 +35,23 @@ genvar i, l;
 assign acc_in = do_acc_delayed[0] == 1'b1 ? acc_reg : (OWIDTH)'(0);
 assign acc_in2 = dv_delayed[0] == 1'b1 ?
     {intermediates_reg[0][0][IWIDTH - 1],
-    (EWIDTH)'(intermediates_reg[0][0][IWIDTH - 2:INPUT_SIGWIDTH]),
+    acc_in2_exp,
     (SIGWIDTH)'(intermediates_reg[0][0][INPUT_SIGWIDTH - 1:0])} :
     (OWIDTH)'(0);
+
+generate
+    if (IN_BIAS == OUT_BIAS) begin
+        assign acc_in2_exp = (EWIDTH)'(intermediates_reg[0][0][IWIDTH - 2:INPUT_SIGWIDTH]);
+    end else if (OUT_BIAS < IN_BIAS) begin
+        assign acc_in2_exp = (EWIDTH)'(IN_BIAS - OUT_BIAS) >= (EWIDTH)'(intermediates_reg[0][0][IWIDTH - 2:INPUT_SIGWIDTH]) ?
+            (EWIDTH)'(0) :
+            (EWIDTH)'(intermediates_reg[0][0][IWIDTH - 2:INPUT_SIGWIDTH]) - (EWIDTH)'(IN_BIAS - OUT_BIAS);
+    end else begin
+        assign acc_in2_exp = intermediates_reg[0][0][IWIDTH - 2:INPUT_SIGWIDTH] == (IWIDTH)'(0) ?
+            EWIDTH'(0) :
+            (EWIDTH)'(intermediates_reg[0][0][IWIDTH - 2:INPUT_SIGWIDTH]) + (EWIDTH)'(OUT_BIAS - IN_BIAS);
+    end
+endgenerate
 
 generate
 for (i = 0; i < N; i = i + 1) begin : mult_rows

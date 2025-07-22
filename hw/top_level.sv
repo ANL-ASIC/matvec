@@ -22,6 +22,7 @@ module top_level #(
     parameter SIGWIDTH                     = 23,
     parameter WEIGHT_EWIDTH                = 8,
     parameter WEIGHT_SIGWIDTH              = 23,
+    parameter WEIGHT_BIAS                  = 2 ** 7 - 1,
     parameter PROD_EWIDTH                  = 8,
     parameter PROD_SIGWIDTH                = 23
 )(
@@ -93,6 +94,7 @@ module top_level #(
         .EWIDTH(EWIDTH),
         .WEIGHT_EWIDTH(WEIGHT_EWIDTH),
         .WEIGHT_SIGWIDTH(WEIGHT_SIGWIDTH),
+        .WEIGHT_BIAS(WEIGHT_BIAS),
         .PROD_EWIDTH(PROD_EWIDTH),
         .PROD_SIGWIDTH(PROD_SIGWIDTH),
         .M(K),

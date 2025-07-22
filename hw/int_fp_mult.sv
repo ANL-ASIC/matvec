@@ -2,6 +2,7 @@ module int_fp_mult #(
     parameter IWIDTH = 12,
     parameter EWIDTH = 7,
     parameter SIGWIDTH = 23,
+    parameter BIAS = 2 ** 7 - 1,
     parameter OUTPUT_EWIDTH = 7,
     parameter OUTPUT_SIGWIDTH = 23) (
     input [IWIDTH - 1:0] a,
@@ -12,6 +13,7 @@ module int_fp_mult #(
 localparam FWIDTH = EWIDTH + SIGWIDTH + 1;
 localparam PRODWIDTH = SIGWIDTH + IWIDTH + 1;
 localparam SHIFTWIDTH = $clog2(SIGWIDTH + IWIDTH + 1);
+localparam OUTPUT_BIAS = 2 ** (OUTPUT_EWIDTH - 1) - 1;
 
 logic is_zero;
 
@@ -48,7 +50,17 @@ always_comb begin
 end
 
 assign c_sign = b_sign;
-assign c_exp_unrounded = b_exp + ((OUTPUT_EWIDTH)'(leading_bit_index) - (OUTPUT_EWIDTH)'(SIGWIDTH));
+generate
+    if (BIAS == OUTPUT_BIAS) begin
+        assign c_exp_unrounded = b_exp + ((OUTPUT_EWIDTH)'(leading_bit_index) - (OUTPUT_EWIDTH)'(SIGWIDTH));
+    end else if (OUTPUT_BIAS < BIAS) begin
+        assign c_exp_unrounded = b_exp + ((OUTPUT_EWIDTH)'(leading_bit_index) - (OUTPUT_EWIDTH)'(SIGWIDTH)) <= (BIAS - OUTPUT_BIAS) ?
+            (OUTPUT_EWIDTH)'(0) :
+            b_exp + ((OUTPUT_EWIDTH)'(leading_bit_index) - (OUTPUT_EWIDTH)'(SIGWIDTH)) - (BIAS - OUTPUT_BIAS);
+    end else begin
+        assign c_exp_unrounded = b_exp + ((OUTPUT_EWIDTH)'(leading_bit_index) - (OUTPUT_EWIDTH)'(SIGWIDTH)) + (OUTPUT_BIAS - BIAS);
+    end
+endgenerate
 assign prod_shifted = product << (PRODWIDTH - 1 - leading_bit_index);
 assign c_sig_unrounded = {prod_shifted[PRODWIDTH - 1:PRODWIDTH - (OUTPUT_SIGWIDTH + 1) - 2],
     |prod_shifted[PRODWIDTH - (OUTPUT_SIGWIDTH + 1) - 3:0]};

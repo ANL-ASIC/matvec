@@ -1,0 +1,3 @@
+[submodule "tb/cocotb/arbitrary_float"]
+	path = tb/cocotb/arbitrary_float_git
+	url = git@github.com:ANL-ASIC/arbitrary_float.git
