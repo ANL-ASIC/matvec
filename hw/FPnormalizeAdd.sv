@@ -61,18 +61,24 @@ always_comb begin
     leading_zeros_minus_one = leading_zeros - (LBPWIDTH)'(1);
 
     if (leading_zeros > 1)
-        if (EXP_in < {{EWIDTH-LBPWIDTH{1'b0}}, leading_zeros_minus_one}) EXP_out = 0;
-        else EXP_out = EXP_in - {{EWIDTH-LBPWIDTH{1'b0}}, leading_zeros_minus_one};
-        // EXP_out = EXP_in - {{EWIDTH-LBPWIDTH{1'b0}}, rshift};
+        if (EXP_in < {{EWIDTH-LBPWIDTH{1'b0}}, leading_zeros_minus_one}) begin
+            EXP_out = 0;
+            SIG_intermediate = 0;
+        end else begin
+            EXP_out = EXP_in - {{EWIDTH-LBPWIDTH{1'b0}}, leading_zeros_minus_one};
+            SIG_intermediate = SIG_in << leading_zeros;
+        end
     else begin
-        if (SIG_in[SIGWIDTH + 4] == 1'b1)
+        if (SIG_in[SIGWIDTH + 4] == 1'b1) begin
             EXP_out = EXP_in + 1;
-        else
+            SIG_intermediate = SIG_in;
+        end else begin
             EXP_out = EXP_in;
+            SIG_intermediate = SIG_in << 1;
+        end
     end
 end
 
-assign SIG_intermediate = EXP_in < {(EWIDTH-LBPWIDTH)'(0), leading_zeros} ? 0 : SIG_in << leading_zeros;
 assign SIG_truncated = {SIG_intermediate[SIGWIDTH + 4:2], |SIG_intermediate[1:0]};
 
 

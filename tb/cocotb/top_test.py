@@ -450,65 +450,68 @@ async def random_test(dut):
     watchdog.result()
 
 
-# @cocotb.test()
-# async def invalid_signal_test(dut):
-#     sim_status = init(dut)
-#     await cocotb.start(generate_clock(dut, sim_status))
-#     dut.reset.value = 1
-#     await RisingEdge(dut.clk)
-#     dut.reset.value = 0
-#
-#     # dv asserted when SRO has not been asserted is invalid
-#     dut.dv.value = 1
-#     await RisingEdge(dut.clk)
-#     await FallingEdge(dut.clk)
-#     assert(dut.SRO_invalid.value == 0)
-#     assert(dut.dv_invalid.value == 1)
-#     assert(dut.fsm.addr_reg.value == 0)
-#
-#     # move out of idle
-#     dut.SRO.value = 1
-#     dut.dv.value = 0
-#     await FallingEdge(dut.clk)
-#     dut.dv.value = 1
-#     assert(dut.SRO_invalid.value == 0)
-#     assert(dut.dv_invalid.value == 0)
-#     assert(dut.fsm.addr_reg.value == 0)
-#
-#     # keeping SRO asserted after a cycle is invalid. Addr should start to increment
-#     await FallingEdge(dut.clk)
-#     for i in range(dut.number_of_rows_per_frame.value - 1):
-#         assert(dut.SRO_invalid.value == 1)
-#         assert(dut.dv_invalid.value == 0)
-#         assert(dut.fsm.addr_reg.value != 0)
-#         await FallingEdge(dut.clk)
-#
-#     # SRO asserted after last row is NOT invalid. Addr should be back to zero
-#     assert(dut.SRO_invalid.value == 0)
-#     assert(dut.dv_invalid.value == 0)
-#     assert(dut.fsm.addr_reg.value == 0)
-#
-#     # unasserting SRO after a cycle is valid. Addr should start to increment
-#     dut.SRO.value = 0
-#     await FallingEdge(dut.clk)
-#     for i in range(dut.number_of_rows_per_frame.value - 1):
-#         assert(dut.SRO_invalid.value == 0)
-#         assert(dut.dv_invalid.value == 0)
-#         assert(dut.fsm.addr_reg.value != 0)
-#         await FallingEdge(dut.clk)
-#
-#     # not reasserting SRO on the last row is valid. Addr should start to increment
-#     assert(dut.SRO_invalid.value == 0)
-#     assert(dut.dv_invalid.value == 0)
-#     assert(dut.fsm.addr_reg.value == 0)
-#
-#     sim_status.do_sim = False
+@cocotb.test()
+async def invalid_signal_test(dut):
+    sim_status = init(dut)
+    await cocotb.start(generate_clock(dut, sim_status))
+    dut.reset.value = 1
+    await RisingEdge(dut.clk)
+    dut.reset.value = 0
+
+    # dv asserted when SRO has not been asserted is invalid
+    dut.dv.value = 1
+    await RisingEdge(dut.clk)
+    await FallingEdge(dut.clk)
+    assert dut.SRO_invalid.value == 0, 'Unasserted SRO is invalid when IDLE'
+    assert dut.dv_invalid.value == 1, 'Asserted dv is valid when IDLE'
+    assert dut.fsm.addr_reg.value == 0, 'addr is not 0 when IDLE'
+
+    # move out of idle
+    dut.SRO.setimmediatevalue(1)
+    dut.dv.setimmediatevalue(0)
+    await RisingEdge(dut.clk)
+    dut.dv.setimmediatevalue(1)
+    await FallingEdge(dut.clk)
+    assert dut.SRO_invalid.value == 1, 'Asserted SRO is valid when RUN'
+    assert dut.dv_invalid.value == 0, 'Asserted dv is invalid when RUN'
+    assert dut.fsm.addr_reg.value == 0, 'addr is not 0 on first cycle of RUN'
+
+    # keeping SRO asserted after a cycle is invalid. Addr should start to increment
+    await FallingEdge(dut.clk)
+    for i in range(dut.number_of_rows_per_frame.value - 1):
+        assert dut.SRO_invalid.value == 1 or dut.fsm.addr_out == dut.number_of_rows_per_frame.value - 1, 'Asserted SRO is valid when RUN'
+        assert dut.dv_invalid.value == 0, 'Asserted dv is invalid when RUN'
+        assert dut.fsm.addr_reg.value != 0, f'Addr is {dut.fsm.addr_reg.value} on cycle {i} of run'
+        await FallingEdge(dut.clk)
+
+    # SRO asserted after last row is NOT invalid. Addr should be back to zero
+    dut.SRO.setimmediatevalue(0)
+    await RisingEdge(dut.clk)
+    assert dut.SRO_invalid.value == 0, 'Asserted SRO on last cycle of RUN is invalid'
+    assert dut.dv_invalid.value == 0, 'Asserted dv is invalid when RUN'
+    assert dut.fsm.addr_reg.value == 0, 'addr is not last address on last cycle of RUN'
+
+    await FallingEdge(dut.clk)
+    for i in range(dut.number_of_rows_per_frame.value - 1):
+        assert dut.SRO_invalid.value == 0, 'Unasserted SRO is invalid when RUN'
+        assert dut.dv_invalid.value == 0, 'Asserted dv is invalid when RUN'
+        assert dut.fsm.addr_reg.value != 0, f'Addr is {dut.fsm.addr_reg.value} on cycle {i} of run'
+        await FallingEdge(dut.clk)
+
+    # not reasserting SRO on the last row is valid. Addr should start to increment
+    dut.dv.setimmediatevalue(0)
+    await RisingEdge(dut.clk)
+    assert dut.SRO_invalid.value == 0, 'Unasserted SRO is invalid when IDLE'
+    assert dut.dv_invalid.value == 0, 'Unasserted dv is invalid when IDLE'
+    assert dut.fsm.addr_reg.value == 0, 'addr is not 0 when IDLE'
+
+    sim_status.do_sim = False
 
 
 @cocotb.test()
 async def adder_unit_test(dut):
     ebits, mbits = dut.EWIDTH.value, dut.SIGWIDTH.value
-    conf = AFloatConfig(exponent_bits = ebits, mantissa_bits = mbits, nan_inf_support = False, subnormal_support=False)
+    conf = AFloatConfig(exponent_bits = ebits + 1, mantissa_bits = mbits, nan_inf_support = False, subnormal_support=False)
     float_max_val = AFloat.from_literal(int('0' + '1' * (ebits + mbits), 2), conf).as_float()
 
     def format_binstr(value):
@@ -533,6 +536,7 @@ async def adder_unit_test(dut):
         if abs(expected.as_float()) > float_max_val:
             return
         expected_binstr = expected.binstr()
+        expected_binstr = expected_binstr[0] + expected_binstr[-ebits - mbits:-mbits] + expected_binstr[-mbits:]
 
         # Compare calculated vs expected. Ignore sign for zero value, and overflow entirely
         assert dut.sum.value.binstr == expected_binstr \
@@ -557,6 +561,8 @@ async def adder_unit_test(dut):
     for _ in range(10000):
         X = random.uniform(-float_max_val, float_max_val)
         Y = random.uniform(-float_max_val, float_max_val)
-        X_binstr = AFloat.from_float(X, conf=conf).binstr()
-        Y_binstr = AFloat.from_float(Y, conf=conf).binstr()
+        X_binstr = AFloat.from_float(X).resize(conf).binstr()
+        Y_binstr = AFloat.from_float(Y).resize(conf).binstr()
+        X_binstr = X_binstr[0] + X_binstr[-ebits - mbits:-mbits] + X_binstr[-mbits:]
+        Y_binstr = Y_binstr[0] + Y_binstr[-ebits - mbits:-mbits] + Y_binstr[-mbits:]
         await check_addition(X_binstr, Y_binstr)
